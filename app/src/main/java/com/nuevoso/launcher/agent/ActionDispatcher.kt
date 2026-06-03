@@ -1,6 +1,8 @@
 package com.nuevoso.launcher.agent
 
 import android.content.Context
+import com.nuevoso.launcher.agent.executors.AccessibilityExecutor
+import com.nuevoso.launcher.agent.executors.InstallAppExecutor
 import com.nuevoso.launcher.agent.executors.DialExecutor
 import com.nuevoso.launcher.agent.executors.OpenAppExecutor
 import com.nuevoso.launcher.agent.executors.SearchWebExecutor
@@ -13,9 +15,11 @@ import com.nuevoso.launcher.data.memory.MemoryRepository
 
 class ActionDispatcher(
     context: Context,
-    appRepository: AppRepository,
+    private val appRepository: AppRepository,
     private val memoryRepository: MemoryRepository,
 ) {
+    private val accessibility = AccessibilityExecutor()
+    private val installApp = InstallAppExecutor(context)
     private val openApp = OpenAppExecutor(context, appRepository)
     private val searchWeb = SearchWebExecutor(context)
     private val setAlarm = SetAlarmExecutor(context)
@@ -37,7 +41,18 @@ class ActionDispatcher(
                     setting = call.args["setting"] ?: "",
                     value = call.args["value"],
                 )
-                "remember_fact" -> {
+                "install_app" -> installApp.execute(call.args["app_name"] ?: "")
+            "read_screen" -> accessibility.readScreen()
+            "tap_element" -> accessibility.tapElement(call.args["description"] ?: "")
+            "type_text" -> accessibility.typeText(call.args["text"] ?: "")
+            "scroll_screen" -> accessibility.scrollScreen(call.args["direction"] ?: "down")
+            "press_back" -> accessibility.pressBack()
+            "list_apps" -> {
+                val apps = appRepository.getAllApps()
+                if (apps.isEmpty()) "No se encontraron aplicaciones instaladas."
+                else apps.joinToString(", ") { it.label }
+            }
+            "remember_fact" -> {
                     val fact = call.args["fact"] ?: ""
                     if (fact.isNotBlank()) memoryRepository.rememberFact(fact)
                     "Recordado."

@@ -55,12 +55,12 @@ data class GeminiTool(
 data class GeminiFunctionDeclaration(
     val name: String,
     val description: String,
-    val parameters: GeminiSchema,
+    val parameters: GeminiSchema? = null,
 )
 
 @Serializable
 data class GeminiSchema(
-    val type: String = "OBJECT",
+    val type: String,  // sin default para que encodeDefaults=false no lo omita
     val properties: Map<String, GeminiProperty> = emptyMap(),
     val required: List<String> = emptyList(),
 )

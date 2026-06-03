@@ -35,8 +35,8 @@ y **aprende del usuario** mediante una capa de memoria local.
 
 ## 2. Estado actual (al 2026-06-03)
 
-- ✅ **Compila en CI.** Último build exitoso: commit `3d57d77`, run `26862773391`,
-  artifact `app-debug` (~17.65 MB, `app-debug.apk`).
+- ✅ **Compila en CI.** Último CI verde: commit `6075541`, run `26862773391` (~17.65 MB).
+  Local: emulador `Pixel_3a_API_34` (Android 14 arm64) operativo en Mac. Build local en ~10 s con `./gradlew installDebug`.
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
 - ✅ 33 archivos Kotlin, app completa v1 (chat home + cajón de apps + ajustes + agente).
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
@@ -130,6 +130,12 @@ MAIN/LAUNCHER), `SET_ALARM`.
 Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de implementar):
 
 - [ ] **Voz (es-ES)**: `SpeechRecognizerManager` + TTS (entrada/salida por voz en el chat).
+- [x] **Emulador local** — `Pixel_3a_API_34` configurado en Mac, `local.properties` + `~/.zshrc` con `ANDROID_HOME`.
+- [x] **Accessibility Service** (`NuevoSOAccessibilityService`) — `read_screen`, `tap_element`, `type_text`, `scroll_screen`, `press_back`. Activación desde Ajustes.
+- [x] **Navegación web autónoma** — system prompt con flujo obligatorio search→read→tap. Límite de rondas 6→15.
+- [x] **`list_apps`** — el agente puede listar apps instaladas.
+- [x] **`install_app`** — abre Play Store, navega y toca Instalar internamente; retry 429 con backoff en GeminiProvider.
+- [x] **Fixes**: botón ← en Settings y Drawer; crash cajón (`distinctBy packageName`); `GeminiSchema.type` sin default (fix 400).
 - [x] **Streaming SSE** de respuestas de Gemini — hecho (2026-06-03). `streamGenerateContent?alt=sse`.
 - [ ] **EncryptedSharedPreferences** para la API key (hoy DataStore en claro).
 - [ ] **Proveedor Claude** (`ClaudeProvider : AiProvider`) para validar la abstracción.
@@ -153,3 +159,10 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - Streaming: `GeminiApi.streamGenerateContent` (`@Streaming`, `alt=sse`); `GeminiProvider` parsea
     líneas `data:` y emite texto acumulado. UI: `ChatUiState.streamingText` + burbuja viva en `ChatScreen`.
   - ✅ CI verde: commit `3d57d77`, run `26862773391`, artifact `app-debug` (~17.65 MB).
+- **2026-06-03** — Sesión de emulador + agente completo.
+  - Emulador local configurado (Mac, `Pixel_3a_API_34`, `local.properties`, `~/.zshrc`).
+  - `NuevoSOAccessibilityService`: 5 tools de control de pantalla (read/tap/type/scroll/back).
+  - `install_app`: flujo autónomo Play Store → tap Instalar → espera → abre app. Retry 429 con backoff.
+  - `list_apps`: lista apps instaladas vía `AppRepository`.
+  - System prompt reescrito: flujo obligatorio de navegación web (search→read→tap hasta completar).
+  - Fixes: botón ← en Settings/Drawer; crash cajón (`distinctBy`); `GeminiSchema.type`; `GeminiFunctionDeclaration.parameters` nullable.

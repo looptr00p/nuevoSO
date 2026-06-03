@@ -17,4 +17,8 @@
     <string name="remember_facts_label">Perfil / Memoria</string>
     <string name="clear_memory">Borrar memoria</string>
     <string name="facts_count">%d hechos recordados</string>
+    <string name="accessibility_service_description">Permite a nuevoSO leer la pantalla e interactuar con cualquier app en tu nombre.</string>
+    <string name="accessibility_enable">Activar asistente de pantalla</string>
+    <string name="accessibility_enable_desc">Necesario para que la IA navegue apps y webs por ti</string>
+    <string name="accessibility_enabled">Asistente de pantalla activo</string>
 </resources>

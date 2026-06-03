@@ -20,7 +20,7 @@ class AgentLoop(
         val convo = history.toMutableList()
         var lastText = ""
 
-        repeat(6) { // max rounds to prevent infinite loops
+        repeat(15) { // max rounds — navegación web puede requerir varios pasos
             val turn = provider.chat(
                 system = systemPrompt,
                 history = convo,

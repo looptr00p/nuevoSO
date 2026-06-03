@@ -15,6 +15,7 @@ class AppRepository(private val pm: PackageManager) {
     fun getAllApps(): List<AppInfo> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         return pm.queryIntentActivities(intent, 0)
+            .distinctBy { it.activityInfo.packageName }
             .map { ri ->
                 AppInfo(
                     label = ri.loadLabel(pm).toString(),

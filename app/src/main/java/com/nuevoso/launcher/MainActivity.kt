@@ -44,10 +44,10 @@ private fun NuevoSOApp() {
             )
         }
         composable("drawer") {
-            AppDrawerScreen()
+            AppDrawerScreen(onBack = { navController.popBackStack() })
         }
         composable("settings") {
-            SettingsScreen()
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
     }
 }

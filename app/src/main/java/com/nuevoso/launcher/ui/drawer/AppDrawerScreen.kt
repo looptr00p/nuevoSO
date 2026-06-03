@@ -17,6 +17,10 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -38,7 +42,7 @@ import com.nuevoso.launcher.R
 import com.nuevoso.launcher.data.apps.AppInfo
 
 @Composable
-fun AppDrawerScreen(vm: AppDrawerViewModel = viewModel()) {
+fun AppDrawerScreen(onBack: () -> Unit = {}, vm: AppDrawerViewModel = viewModel()) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
@@ -48,11 +52,18 @@ fun AppDrawerScreen(vm: AppDrawerViewModel = viewModel()) {
             .statusBarsPadding()
             .padding(horizontal = 8.dp),
     ) {
-        Text(
-            text = stringResource(R.string.app_drawer),
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-        )
+        androidx.compose.foundation.layout.Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+            }
+            Text(
+                text = stringResource(R.string.app_drawer),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
+            )
+        }
 
         OutlinedTextField(
             value = state.query,

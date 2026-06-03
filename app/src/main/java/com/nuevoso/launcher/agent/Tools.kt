@@ -52,6 +52,56 @@ val ALL_TOOLS = listOf(
         required = listOf("setting"),
     ),
     ToolSpec(
+        name = "install_app",
+        description = "Abre Play Store buscando una app para instalarla. Después usa read_screen para ver los resultados y tap_element('Instalar') para completar la instalación.",
+        parameters = mapOf(
+            "app_name" to ParamSpec("string", "Nombre de la app a instalar, ej: WhatsApp, Spotify, Chrome"),
+        ),
+        required = listOf("app_name"),
+    ),
+    ToolSpec(
+        name = "read_screen",
+        description = "Lee el contenido de la pantalla actual del teléfono: texto visible, botones, inputs y elementos interactivos de cualquier app abierta. Úsala para saber qué hay en pantalla antes de interactuar.",
+        parameters = emptyMap(),
+        required = emptyList(),
+    ),
+    ToolSpec(
+        name = "tap_element",
+        description = "Hace tap en un elemento visible en pantalla buscándolo por su texto o descripción. Úsala para pulsar botones, links o elementos de menú en cualquier app.",
+        parameters = mapOf(
+            "description" to ParamSpec("string", "Texto o descripción del elemento a pulsar, ej: 'Buscar', 'Confirmar pedido', 'Ver más'"),
+        ),
+        required = listOf("description"),
+    ),
+    ToolSpec(
+        name = "type_text",
+        description = "Escribe texto en el campo de entrada activo o visible en pantalla. Úsala para rellenar formularios, barras de búsqueda o cualquier input.",
+        parameters = mapOf(
+            "text" to ParamSpec("string", "Texto a escribir en el campo"),
+        ),
+        required = listOf("text"),
+    ),
+    ToolSpec(
+        name = "scroll_screen",
+        description = "Desplaza la pantalla hacia arriba o abajo para ver más contenido.",
+        parameters = mapOf(
+            "direction" to ParamSpec("string", "Dirección del scroll", enum = listOf("down", "up")),
+        ),
+        required = listOf("direction"),
+    ),
+    ToolSpec(
+        name = "press_back",
+        description = "Pulsa el botón Atrás del sistema para navegar a la pantalla anterior.",
+        parameters = emptyMap(),
+        required = emptyList(),
+    ),
+    ToolSpec(
+        name = "list_apps",
+        description = "Devuelve la lista completa de aplicaciones instaladas en el teléfono. Úsala cuando el usuario pregunte qué apps tiene, quiera buscar una app o necesites saber si una app está instalada antes de abrirla.",
+        parameters = emptyMap(),
+        required = emptyList(),
+    ),
+    ToolSpec(
         name = "remember_fact",
         description = "Guarda un hecho importante sobre el usuario en la memoria local del teléfono para recordarlo en futuras conversaciones.",
         parameters = mapOf(

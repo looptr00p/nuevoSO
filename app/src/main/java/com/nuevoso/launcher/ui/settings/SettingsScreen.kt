@@ -19,6 +19,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
@@ -52,7 +53,7 @@ import com.nuevoso.launcher.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
+fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel()) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
@@ -73,7 +74,14 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineSmall)
+        androidx.compose.foundation.layout.Row(
+            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
+            }
+            Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineSmall)
+        }
 
         // API Key
         Text(stringResource(R.string.api_key_label), style = MaterialTheme.typography.labelLarge)
@@ -177,6 +185,36 @@ fun SettingsScreen(vm: SettingsViewModel = viewModel()) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.clear_memory))
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // Accessibility service
+        val accessibilityEnabled = com.nuevoso.launcher.accessibility.NuevoSOAccessibilityService.isEnabled()
+        Text(stringResource(R.string.accessibility_enable), style = MaterialTheme.typography.labelLarge)
+        Text(
+            stringResource(R.string.accessibility_enable_desc),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (accessibilityEnabled) {
+            Text(
+                stringResource(R.string.accessibility_enabled),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        } else {
+            Button(
+                onClick = {
+                    context.startActivity(
+                        android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.accessibility_enable))
+            }
         }
     }
 

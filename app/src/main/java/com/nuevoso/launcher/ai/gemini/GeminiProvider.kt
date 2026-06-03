@@ -8,7 +8,9 @@ import com.nuevoso.launcher.ai.ParamSpec
 import com.nuevoso.launcher.ai.ToolCall
 import com.nuevoso.launcher.ai.ToolSpec
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -38,6 +40,28 @@ class GeminiProvider(
     }
 
     override suspend fun chat(
+        system: String,
+        history: List<Msg>,
+        tools: List<ToolSpec>,
+        onTextDelta: (String) -> Unit,
+    ): AiTurn {
+        // Retry con backoff exponencial en caso de rate limit (429)
+        var lastError: Exception? = null
+        for (attempt in 0..3) {
+            try {
+                return chatInternal(system, history, tools, onTextDelta)
+            } catch (e: HttpException) {
+                if (e.code() == 429) {
+                    lastError = e
+                    val waitMs = (1L shl attempt) * 5_000L  // 5s, 10s, 20s, 40s
+                    delay(waitMs)
+                } else throw e
+            }
+        }
+        throw lastError!!
+    }
+
+    private suspend fun chatInternal(
         system: String,
         history: List<Msg>,
         tools: List<ToolSpec>,
@@ -86,7 +110,7 @@ class GeminiProvider(
                 GeminiFunctionDeclaration(
                     name = spec.name,
                     description = spec.description,
-                    parameters = GeminiSchema(
+                    parameters = if (spec.parameters.isNotEmpty()) GeminiSchema(
                         type = "OBJECT",
                         properties = spec.parameters.mapValues { (_, p) ->
                             GeminiProperty(
@@ -96,7 +120,7 @@ class GeminiProvider(
                             )
                         },
                         required = spec.required,
-                    )
+                    ) else null,
                 )
             })
         ) else null
