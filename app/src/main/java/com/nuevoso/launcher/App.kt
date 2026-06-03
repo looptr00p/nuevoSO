@@ -1,0 +1,44 @@
+package com.nuevoso.launcher
+
+import android.app.Application
+import android.content.Context
+import androidx.room.Room
+import com.nuevoso.launcher.ai.ProviderFactory
+import com.nuevoso.launcher.data.apps.AppRepository
+import com.nuevoso.launcher.data.memory.MemoryDb
+import com.nuevoso.launcher.data.memory.MemoryRepository
+import com.nuevoso.launcher.data.settings.SettingsRepository
+
+class App : Application() {
+
+    lateinit var settingsRepository: SettingsRepository
+        private set
+    lateinit var memoryRepository: MemoryRepository
+        private set
+    lateinit var appRepository: AppRepository
+        private set
+    lateinit var providerFactory: ProviderFactory
+        private set
+
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+
+        settingsRepository = SettingsRepository(this)
+
+        val db = Room.databaseBuilder(this, MemoryDb::class.java, "memory.db")
+            .fallbackToDestructiveMigration()
+            .build()
+        memoryRepository = MemoryRepository(db.memoryDao())
+
+        appRepository = AppRepository(packageManager)
+        providerFactory = ProviderFactory(settingsRepository)
+    }
+
+    companion object {
+        lateinit var instance: App
+            private set
+
+        fun get(context: Context): App = context.applicationContext as App
+    }
+}

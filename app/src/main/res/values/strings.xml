@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">nuevoSO</string>
+    <string name="chat_hint">Escríbeme algo…</string>
+    <string name="send">Enviar</string>
+    <string name="settings">Ajustes</string>
+    <string name="app_drawer">Mis apps</string>
+    <string name="api_key_label">API Key de Gemini</string>
+    <string name="api_key_hint">Pega tu clave de aistudio.google.com</string>
+    <string name="model_label">Modelo</string>
+    <string name="set_as_home">Poner como inicio por defecto</string>
+    <string name="set_as_home_desc">Esto reemplazará tu pantalla de inicio actual</string>
+    <string name="thinking">Pensando…</string>
+    <string name="error_no_key">Configura tu API Key en Ajustes primero</string>
+    <string name="open_settings">Ir a Ajustes</string>
+    <string name="search_apps">Buscar apps…</string>
+    <string name="remember_facts_label">Perfil / Memoria</string>
+    <string name="clear_memory">Borrar memoria</string>
+    <string name="facts_count">%d hechos recordados</string>
+</resources>

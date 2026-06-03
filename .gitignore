@@ -1,0 +1,16 @@
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# APK outputs (only needed locally; CI uploads as artifact)
+app/build/
+
+# Do NOT ignore the wrapper jar — CI needs it
+!gradle/wrapper/gradle-wrapper.jar

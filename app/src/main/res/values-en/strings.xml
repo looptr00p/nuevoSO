@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">nuevoSO</string>
+    <string name="chat_hint">Type something…</string>
+    <string name="send">Send</string>
+    <string name="settings">Settings</string>
+    <string name="app_drawer">My apps</string>
+    <string name="api_key_label">Gemini API Key</string>
+    <string name="api_key_hint">Paste your key from aistudio.google.com</string>
+    <string name="model_label">Model</string>
+    <string name="set_as_home">Set as default home</string>
+    <string name="set_as_home_desc">This will replace your current home screen</string>
+    <string name="thinking">Thinking…</string>
+    <string name="error_no_key">Configure your API Key in Settings first</string>
+    <string name="open_settings">Go to Settings</string>
+    <string name="search_apps">Search apps…</string>
+    <string name="remember_facts_label">Profile / Memory</string>
+    <string name="clear_memory">Clear memory</string>
+    <string name="facts_count">%d facts remembered</string>
+</resources>
