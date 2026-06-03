@@ -35,8 +35,8 @@ y **aprende del usuario** mediante una capa de memoria local.
 
 ## 2. Estado actual (al 2026-06-03)
 
-- ✅ **Compila en CI.** Último build exitoso: commit `2abbfcc`, run `26859991910`,
-  artifact `app-debug` (~16.8 MB, `app-debug.apk`).
+- ✅ **Compila en CI.** Último build exitoso: commit `3d57d77`, run `26862773391`,
+  artifact `app-debug` (~17.65 MB, `app-debug.apk`).
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
 - ✅ 33 archivos Kotlin, app completa v1 (chat home + cajón de apps + ajustes + agente).
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
@@ -152,4 +152,4 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - `AiProvider.chat`: se quitó `toolResults`, se añadió `onTextDelta(textoAcumulado)`.
   - Streaming: `GeminiApi.streamGenerateContent` (`@Streaming`, `alt=sse`); `GeminiProvider` parsea
     líneas `data:` y emite texto acumulado. UI: `ChatUiState.streamingText` + burbuja viva en `ChatScreen`.
-  - Pendiente de confirmar **CI verde** tras este commit (actualizar "Estado actual" con run/artifact).
+  - ✅ CI verde: commit `3d57d77`, run `26862773391`, artifact `app-debug` (~17.65 MB).
