@@ -10,11 +10,11 @@ import com.nuevoso.launcher.ai.ToolResult
 import com.nuevoso.launcher.ai.ToolSpec
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.content
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
+
 class GeminiProvider(
     private val apiKey: String,
     private val modelId: String = "gemini-2.5-flash",

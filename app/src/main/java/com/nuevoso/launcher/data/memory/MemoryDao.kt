@@ -24,7 +24,7 @@ interface MemoryDao {
     suspend fun insertMessage(msg: ChatMessageEntity)
 
     @Query("SELECT * FROM chat_messages ORDER BY createdAt DESC LIMIT :limit")
-    suspend fun getRecentMessages(limit: Int = 40): List<ChatMessageEntity>
+    suspend fun getRecentMessages(limit: Int): List<ChatMessageEntity>
 
     @Query("DELETE FROM chat_messages")
     suspend fun clearMessages()

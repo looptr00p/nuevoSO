@@ -26,7 +26,22 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --stacktrace
+        run: |
+          set -o pipefail
+          ./gradlew assembleDebug --stacktrace 2>&1 | tee build_output.txt
+        shell: bash
+
+      - name: Surface build errors as annotations
+        if: failure()
+        run: |
+          echo "Extracting compiler errors..."
+          grep -E "^e: |error:|FAILURE:|What went wrong|Caused by:|Unresolved reference|> Task .* FAILED" build_output.txt \
+            | head -40 \
+            | while IFS= read -r line; do
+                clean=$(echo "$line" | sed 's/%/%25/g; s/\r//g')
+                echo "::error::$clean"
+              done
+        shell: bash
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
