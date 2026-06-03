@@ -68,9 +68,10 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
 
-    LaunchedEffect(state.messages.size) {
-        if (state.messages.isNotEmpty()) {
-            listState.animateScrollToItem(state.messages.size - 1)
+    LaunchedEffect(state.messages.size, state.streamingText, state.isThinking) {
+        val lastIndex = state.messages.size  // +1 por la burbuja de streaming/"pensando"
+        if (lastIndex > 0 || state.streamingText != null || state.isThinking) {
+            listState.animateScrollToItem(lastIndex)
         }
     }
 
@@ -124,7 +125,12 @@ fun ChatScreen(
                 items(state.messages, key = { it.id }) { msg ->
                     MessageBubble(msg)
                 }
-                if (state.isThinking) {
+                state.streamingText?.let { streaming ->
+                    item {
+                        MessageBubble(ChatMessage(role = "assistant", text = streaming))
+                    }
+                }
+                if (state.isThinking && state.streamingText == null) {
                     item {
                         Row(
                             modifier = Modifier.fillMaxWidth(),

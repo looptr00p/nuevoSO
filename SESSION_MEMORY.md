@@ -130,7 +130,7 @@ MAIN/LAUNCHER), `SET_ALARM`.
 Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de implementar):
 
 - [ ] **Voz (es-ES)**: `SpeechRecognizerManager` + TTS (entrada/salida por voz en el chat).
-- [ ] **Streaming SSE** de respuestas de Gemini (UX más fluida que esperar el turno completo).
+- [x] **Streaming SSE** de respuestas de Gemini — hecho (2026-06-03). `streamGenerateContent?alt=sse`.
 - [ ] **EncryptedSharedPreferences** para la API key (hoy DataStore en claro).
 - [ ] **Proveedor Claude** (`ClaudeProvider : AiProvider`) para validar la abstracción.
 - [ ] **Modo híbrido on-device** (Gemma/DeepSeek vía MediaPipe LLM Inference o MLC) — v2.
@@ -144,3 +144,12 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
 
 - **2026-06-03** — v1 completa y compilando en CI (commit `2abbfcc`). APK descargable.
   Creada esta memoria de sesión + skill `nuevoso-continue` para continuidad.
+- **2026-06-03** — Solidificado el agente + streaming SSE.
+  - Agente: la conversación viaja como **transcript único** (`Msg` ahora lleva `toolCalls`/
+    `toolResults`; roles `user`/`model`/`tool`). `AgentLoop` acumula el transcript y reenvía los
+    `functionCall` del modelo antes de los `functionResponse` → multi-tool correcto en Gemini.
+    Guarda de rondas + `ActionDispatcher` con try/catch por herramienta (un fallo ya no tumba el turno).
+  - `AiProvider.chat`: se quitó `toolResults`, se añadió `onTextDelta(textoAcumulado)`.
+  - Streaming: `GeminiApi.streamGenerateContent` (`@Streaming`, `alt=sse`); `GeminiProvider` parsea
+    líneas `data:` y emite texto acumulado. UI: `ChatUiState.streamingText` + burbuja viva en `ChatScreen`.
+  - Pendiente de confirmar **CI verde** tras este commit (actualizar "Estado actual" con run/artifact).

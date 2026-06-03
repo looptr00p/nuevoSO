@@ -6,8 +6,9 @@ import com.nuevoso.launcher.ai.AiTurn
 import com.nuevoso.launcher.ai.Msg
 import com.nuevoso.launcher.ai.ParamSpec
 import com.nuevoso.launcher.ai.ToolCall
-import com.nuevoso.launcher.ai.ToolResult
 import com.nuevoso.launcher.ai.ToolSpec
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import okhttp3.MediaType.Companion.toMediaType
@@ -40,29 +41,44 @@ class GeminiProvider(
         system: String,
         history: List<Msg>,
         tools: List<ToolSpec>,
-        toolResults: List<ToolResult>,
+        onTextDelta: (String) -> Unit,
     ): AiTurn {
         val contents = mutableListOf<GeminiContent>()
 
+        // El transcript llega como una lista ordenada de Msg: texto de usuario/modelo,
+        // los functionCall que emitió el modelo y los functionResponse de las herramientas.
         for (msg in history) {
-            val geminiRole = if (msg.role == "user") "user" else "model"
-            contents.add(GeminiContent(role = geminiRole, parts = listOf(GeminiPart(text = msg.text))))
-        }
-
-        for (tr in toolResults) {
-            contents.add(
-                GeminiContent(
-                    role = "function",
-                    parts = listOf(
+            when (msg.role) {
+                "user" -> contents.add(
+                    GeminiContent(role = "user", parts = listOf(GeminiPart(text = msg.text)))
+                )
+                "tool" -> {
+                    val parts = msg.toolResults.map { tr ->
                         GeminiPart(
                             functionResponse = GeminiFunctionResponse(
                                 name = tr.id,
                                 response = mapOf("result" to JsonPrimitive(tr.result)),
                             )
                         )
-                    )
-                )
-            )
+                    }
+                    if (parts.isNotEmpty()) contents.add(GeminiContent(role = "function", parts = parts))
+                }
+                else -> { // "model"
+                    val parts = mutableListOf<GeminiPart>()
+                    if (msg.text.isNotBlank()) parts.add(GeminiPart(text = msg.text))
+                    for (tc in msg.toolCalls) {
+                        parts.add(
+                            GeminiPart(
+                                functionCall = GeminiFunctionCall(
+                                    name = tc.name,
+                                    args = tc.args.mapValues { (_, v) -> JsonPrimitive(v) },
+                                )
+                            )
+                        )
+                    }
+                    if (parts.isNotEmpty()) contents.add(GeminiContent(role = "model", parts = parts))
+                }
+            }
         }
 
         val geminiTools = if (tools.isNotEmpty()) listOf(
@@ -92,28 +108,49 @@ class GeminiProvider(
             generationConfig = GeminiGenerationConfig(),
         )
 
-        val response = api.generateContent(modelId, apiKey, request)
-        val candidate = response.candidates.firstOrNull()
-        val parts = candidate?.content?.parts ?: emptyList()
+        return withContext(Dispatchers.IO) {
+            val body = api.streamGenerateContent(model = modelId, apiKey = apiKey, request = request)
+            val acc = StringBuilder()
+            val toolCalls = mutableListOf<ToolCall>()
 
-        val textParts = parts.mapNotNull { it.text }.joinToString("")
-        val toolCalls = parts.mapNotNull { part ->
-            part.functionCall?.let { fc ->
-                ToolCall(
-                    id = fc.name,
-                    name = fc.name,
-                    args = fc.args.mapValues { (_, v) ->
-                        if (v is JsonPrimitive) v.content else v.toString().removeSurrounding("\"")
-                    },
-                )
+            body.charStream().buffered().useLines { lines ->
+                for (line in lines) {
+                    val trimmed = line.trim()
+                    if (!trimmed.startsWith("data:")) continue
+                    val payload = trimmed.removePrefix("data:").trim()
+                    if (payload.isEmpty() || payload == "[DONE]") continue
+
+                    val chunk = try {
+                        json.decodeFromString<GeminiResponse>(payload)
+                    } catch (e: Exception) {
+                        continue // chunk incompleto/no-JSON: ignorar
+                    }
+
+                    val parts = chunk.candidates.firstOrNull()?.content?.parts ?: emptyList()
+                    for (part in parts) {
+                        part.text?.let { t ->
+                            if (t.isNotEmpty()) {
+                                acc.append(t)
+                                onTextDelta(acc.toString())
+                            }
+                        }
+                        part.functionCall?.let { fc ->
+                            toolCalls.add(
+                                ToolCall(
+                                    id = fc.name,
+                                    name = fc.name,
+                                    args = fc.args.mapValues { (_, v) ->
+                                        if (v is JsonPrimitive) v.content else v.toString().removeSurrounding("\"")
+                                    },
+                                )
+                            )
+                        }
+                    }
+                }
             }
-        }
 
-        val stopReason = when {
-            toolCalls.isNotEmpty() -> "tool_use"
-            else -> "end_turn"
+            val stopReason = if (toolCalls.isNotEmpty()) "tool_use" else "end_turn"
+            AiTurn(text = acc.toString(), toolCalls = toolCalls, stopReason = stopReason)
         }
-
-        return AiTurn(text = textParts, toolCalls = toolCalls, stopReason = stopReason)
     }
 }

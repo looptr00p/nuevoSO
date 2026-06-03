@@ -9,6 +9,7 @@ data class ChatMessage(
 data class ChatUiState(
     val messages: List<ChatMessage> = emptyList(),
     val isThinking: Boolean = false,
+    val streamingText: String? = null,  // respuesta del asistente mientras llega por streaming
     val error: String? = null,
     val hasApiKey: Boolean = false,
 )

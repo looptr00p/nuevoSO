@@ -65,15 +65,28 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 val loop = AgentLoop(provider, dispatcher, app.memoryRepository)
 
-                val reply = loop.run(systemPrompt = systemPrompt, history = history)
+                val reply = loop.run(
+                    systemPrompt = systemPrompt,
+                    history = history,
+                    onPartialText = { acc ->
+                        _state.update { it.copy(isThinking = false, streamingText = acc) }
+                    },
+                )
 
                 val assistantMsg = ChatMessage(role = "assistant", text = reply.ifBlank { "✓" })
                 app.memoryRepository.saveMessage("model", assistantMsg.text)
-                _state.update { it.copy(messages = it.messages + assistantMsg, isThinking = false) }
+                _state.update {
+                    it.copy(
+                        messages = it.messages + assistantMsg,
+                        isThinking = false,
+                        streamingText = null,
+                    )
+                }
             } catch (e: Exception) {
                 _state.update {
                     it.copy(
                         isThinking = false,
+                        streamingText = null,
                         error = "Error: ${e.message ?: "desconocido"}",
                     )
                 }

@@ -5,6 +5,6 @@ interface AiProvider {
         system: String,
         history: List<Msg>,
         tools: List<ToolSpec>,
-        toolResults: List<ToolResult> = emptyList(),
+        onTextDelta: (String) -> Unit = {},   // texto acumulado emitido durante el streaming
     ): AiTurn
 }

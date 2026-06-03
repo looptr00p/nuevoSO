@@ -1,6 +1,11 @@
 package com.nuevoso.launcher.ai
 
-data class Msg(val role: String, val text: String)  // role: "user" | "model"
+data class Msg(
+    val role: String,                                 // "user" | "model" | "tool"
+    val text: String = "",
+    val toolCalls: List<ToolCall> = emptyList(),      // turnos "model"
+    val toolResults: List<ToolResult> = emptyList(),  // turnos "tool"
+)
 
 data class ToolSpec(
     val name: String,
