@@ -27,4 +27,14 @@
     <string name="confirmation_summary">Resumen sanitizado</string>
     <string name="confirmation_approve">Aprobar</string>
     <string name="confirmation_reject">Rechazar</string>
+    <string name="dock_home">Inicio</string>
+    <string name="dock_apps">Apps</string>
+    <string name="dock_settings">Ajustes</string>
+    <string name="api_key_saved_securely">API Key guardada en almacenamiento cifrado.</string>
+    <string name="api_key_secure_storage_error">No se pudo acceder al almacenamiento seguro de credenciales.</string>
+    <string name="api_key_save">Guardar API Key</string>
+    <string name="api_key_clear">Limpiar API Key</string>
+    <string name="clear_memory_confirm_message">¿Borrar toda la memoria y el historial de chat? Esta acción no se puede deshacer.</string>
+    <string name="delete">Borrar</string>
+    <string name="cancel">Cancelar</string>
 </resources>

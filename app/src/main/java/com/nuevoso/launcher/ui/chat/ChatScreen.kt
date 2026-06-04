@@ -41,7 +41,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -70,6 +69,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -96,10 +96,14 @@ private val SUGGESTION_CHIPS = listOf(
     "Busca en la web",
 )
 
+enum class ChatScreenMode { Home, Conversation }
+
 @Composable
 fun ChatScreen(
-    onNavigateToDrawer: () -> Unit,
-    onNavigateToSettings: () -> Unit,
+    mode: ChatScreenMode = ChatScreenMode.Home,
+    currentDestination: DockDestination = DockDestination.Home,
+    onDockDestinationSelected: (DockDestination) -> Unit = {},
+    onConversationStarted: () -> Unit = {},
     vm: ChatViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsState()
@@ -109,7 +113,7 @@ fun ChatScreen(
     var input by remember { mutableStateOf("") }
     val keyboard = LocalSoftwareKeyboardController.current
 
-    val isConversationActive = state.messages.isNotEmpty() || state.isThinking
+    val isConversationActive = mode == ChatScreenMode.Conversation
     val orbState = when {
         state.isThinking && state.streamingText == null -> OrbState.Thinking
         state.streamingText != null                     -> OrbState.Speaking
@@ -135,7 +139,14 @@ fun ChatScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(SolBackground),
+            .background(SolBackground)
+            .testTag(
+                if (mode == ChatScreenMode.Home) {
+                    "screen_home"
+                } else {
+                    "screen_conversation"
+                }
+            ),
     ) {
         Column(
             modifier = Modifier
@@ -157,6 +168,7 @@ fun ChatScreen(
                         orbState = orbState,
                         onChipSelected = {
                             vm.sendMessage(it)
+                            onConversationStarted()
                             keyboard?.hide()
                         },
                     )
@@ -178,6 +190,7 @@ fun ChatScreen(
                     if (input.isNotBlank()) {
                         vm.sendMessage(input)
                         input = ""
+                        onConversationStarted()
                         keyboard?.hide()
                     }
                 },
@@ -186,15 +199,8 @@ fun ChatScreen(
             )
 
             DockNav(
-                currentDestination = DockDestination.Home,
-                onDestinationSelected = { dest ->
-                    when (dest) {
-                        DockDestination.Apps        -> onNavigateToDrawer()
-                        DockDestination.Settings    -> onNavigateToSettings()
-                        DockDestination.Conversation,
-                        DockDestination.Home        -> { /* already on home */ }
-                    }
-                },
+                currentDestination = currentDestination,
+                onDestinationSelected = onDockDestinationSelected,
                 isOrbActive = orbState != OrbState.Idle,
             )
         }
@@ -360,7 +366,8 @@ private fun ComposerRow(
                 onValueChange = onInputChange,
                 modifier = Modifier
                     .weight(1f)
-                    .padding(vertical = 10.dp),
+                    .padding(vertical = 10.dp)
+                    .testTag("composer_input"),
                 textStyle = MaterialTheme.typography.bodyLarge.copy(color = SolTextDark),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = {
@@ -381,16 +388,10 @@ private fun ComposerRow(
                     }
                 },
             )
-            IconButton(onClick = {}) {
-                Icon(
-                    imageVector = Icons.Default.Mic,
-                    contentDescription = "Voz",
-                    tint = SolTextSoft,
-                )
-            }
             IconButton(
                 onClick = onSend,
                 enabled = input.isNotBlank() && enabled,
+                modifier = Modifier.testTag("composer_send"),
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.Send,

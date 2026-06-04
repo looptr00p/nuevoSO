@@ -39,6 +39,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -52,7 +53,10 @@ import com.nuevoso.launcher.ui.theme.SolGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel()) {
+fun SettingsScreen(
+    onDockDestinationSelected: (DockDestination) -> Unit = {},
+    vm: SettingsViewModel = viewModel(),
+) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
@@ -69,14 +73,7 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
         bottomBar = {
             DockNav(
                 currentDestination = DockDestination.Settings,
-                onDestinationSelected = { dest ->
-                    when (dest) {
-                        DockDestination.Home,
-                        DockDestination.Apps,
-                        DockDestination.Conversation -> onBack()
-                        DockDestination.Settings     -> { /* already here */ }
-                    }
-                },
+                onDestinationSelected = onDockDestinationSelected,
             )
         },
     ) { innerPadding ->
@@ -87,7 +84,8 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
                 .statusBarsPadding()
                 .verticalScroll(rememberScrollState())
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+                .testTag("screen_settings"),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text(
@@ -100,14 +98,14 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
             Text(stringResource(R.string.api_key_label), style = MaterialTheme.typography.labelLarge)
             if (state.hasApiKey) {
                 Text(
-                    "API Key guardada en almacenamiento cifrado.",
+                    stringResource(R.string.api_key_saved_securely),
                     style = MaterialTheme.typography.bodySmall,
                     color = SolGreen,
                 )
             }
             if (state.credentialError) {
                 Text(
-                    "No se pudo acceder al almacenamiento seguro de credenciales.",
+                    stringResource(R.string.api_key_secure_storage_error),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error,
                 )
@@ -128,14 +126,14 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("Guardar API Key")
+                Text(stringResource(R.string.api_key_save))
             }
             if (state.hasApiKey) {
                 OutlinedButton(
                     onClick = { vm.clearApiKey() },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
-                    Text("Limpiar API Key")
+                    Text(stringResource(R.string.api_key_clear))
                 }
             }
 
@@ -256,15 +254,15 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
         AlertDialog(
             onDismissRequest = { showClearDialog = false },
             title = { Text(stringResource(R.string.clear_memory)) },
-            text = { Text("¿Borrar toda la memoria y el historial de chat? Esta acción no se puede deshacer.") },
+            text = { Text(stringResource(R.string.clear_memory_confirm_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     vm.clearMemory()
                     showClearDialog = false
-                }) { Text("Borrar") }
+                }) { Text(stringResource(R.string.delete)) }
             },
             dismissButton = {
-                TextButton(onClick = { showClearDialog = false }) { Text("Cancelar") }
+                TextButton(onClick = { showClearDialog = false }) { Text(stringResource(R.string.cancel)) }
             },
         )
     }

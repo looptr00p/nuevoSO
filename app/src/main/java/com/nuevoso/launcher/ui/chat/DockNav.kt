@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.ChatBubbleOutline
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Icon
@@ -24,12 +23,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.nuevoso.launcher.R
 import com.nuevoso.launcher.ui.theme.SolSurface
 import com.nuevoso.launcher.ui.theme.SolTextSoft
 import com.nuevoso.launcher.ui.theme.SolTerracotta
 
-enum class DockDestination { Home, Apps, Conversation, Settings }
+enum class DockDestination { Home, Apps, Settings }
 
 @Composable
 fun DockNav(
@@ -50,28 +52,25 @@ fun DockNav(
     ) {
         DockItem(
             icon = Icons.Default.Home,
-            label = "Inicio",
+            label = stringResource(R.string.dock_home),
             selected = currentDestination == DockDestination.Home,
             showMiniOrb = currentDestination == DockDestination.Home,
             orbActive = isOrbActive,
+            tag = "dock_home",
             onClick = { onDestinationSelected(DockDestination.Home) },
         )
         DockItem(
             icon = Icons.Default.Apps,
-            label = "Apps",
+            label = stringResource(R.string.dock_apps),
             selected = currentDestination == DockDestination.Apps,
+            tag = "dock_apps",
             onClick = { onDestinationSelected(DockDestination.Apps) },
         )
         DockItem(
-            icon = Icons.Default.ChatBubbleOutline,
-            label = "Conversar",
-            selected = currentDestination == DockDestination.Conversation,
-            onClick = { onDestinationSelected(DockDestination.Conversation) },
-        )
-        DockItem(
             icon = Icons.Default.Settings,
-            label = "Ajustes",
+            label = stringResource(R.string.dock_settings),
             selected = currentDestination == DockDestination.Settings,
+            tag = "dock_settings",
             onClick = { onDestinationSelected(DockDestination.Settings) },
         )
     }
@@ -83,6 +82,7 @@ private fun DockItem(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    tag: String,
     showMiniOrb: Boolean = false,
     orbActive: Boolean = false,
 ) {
@@ -92,6 +92,7 @@ private fun DockItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier
             .clip(RoundedCornerShape(12.dp))
+            .testTag(tag)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 6.dp),
     ) {

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,7 +53,10 @@ import com.nuevoso.launcher.ui.theme.SolTextFaint
 import com.nuevoso.launcher.ui.theme.SolTextSoft
 
 @Composable
-fun AppDrawerScreen(onBack: () -> Unit = {}, vm: AppDrawerViewModel = viewModel()) {
+fun AppDrawerScreen(
+    onDockDestinationSelected: (DockDestination) -> Unit = {},
+    vm: AppDrawerViewModel = viewModel(),
+) {
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
@@ -60,7 +64,8 @@ fun AppDrawerScreen(onBack: () -> Unit = {}, vm: AppDrawerViewModel = viewModel(
         modifier = Modifier
             .fillMaxSize()
             .background(SolBackground)
-            .statusBarsPadding(),
+            .statusBarsPadding()
+            .testTag("screen_apps"),
     ) {
         // Search pill
         Surface(
@@ -123,17 +128,9 @@ fun AppDrawerScreen(onBack: () -> Unit = {}, vm: AppDrawerViewModel = viewModel(
             }
         }
 
-        // Dock — Home tap goes back to ChatScreen
         DockNav(
             currentDestination = DockDestination.Apps,
-            onDestinationSelected = { dest ->
-                when (dest) {
-                    DockDestination.Home,
-                    DockDestination.Conversation,
-                    DockDestination.Settings -> onBack()
-                    DockDestination.Apps     -> { /* already here */ }
-                }
-            },
+            onDestinationSelected = onDockDestinationSelected,
         )
     }
 }

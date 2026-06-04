@@ -35,13 +35,16 @@ y **aprende del usuario** mediante una capa de memoria local.
 
 ## 2. Estado actual (al 2026-06-04)
 
-- ✅ **Compila localmente.** `./gradlew assembleDebug` BUILD SUCCESSFUL en `feature/sol-os-visual-redesign`.
-- ✅ **App ejecutada en emulador** `emulator-5554` (API 34). Pantalla home con orb, greeting, chips y dock visibles.
+- ✅ **Compila localmente.** `./gradlew test`, `./gradlew lint`, `./gradlew assembleDebug` y
+  `./gradlew assembleAndroidTest` BUILD SUCCESSFUL en `feature/sol-os-visual-redesign`.
+- ✅ **App ejecutada en emulador** `emulator-5554` (API 34) durante la validación visual. Home, Apps,
+  Settings y conversación interna fueron verificados por dumps UI; el dock inferior ya no expone Chat.
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO**.
 - ✅ App completa v1 (chat home + cajón de apps + ajustes + agente) con Runtime v0 gobernado.
 - ✅ `TASK-RUNTIME-001` cerrado, revisado por humano y mergeado en `main` como `3d447bd`.
 - ✅ Almacenamiento cifrado de API keys implementado en commit `93d17e8` (en `main` local; verificar si está en `origin/main`).
-- 🚧 **Rama activa: `feature/sol-os-visual-redesign`** — sistema de diseño Sol OS aplicado a la app.
+- 🚧 **Rama activa: `feature/sol-os-visual-redesign`** — sistema de diseño Sol OS aplicado y correcciones
+  funcionales de navegación/dock/fuentes preparadas para revisión.
   Pendiente: PR de merge a `main`.
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota). Cosmético. Workaround: `git -c commit.gpgsign=false`.
 - 📥 **Descarga del APK:** Actions → run verde → Artifacts → `app-debug` → descomprimir zip.
@@ -138,8 +141,8 @@ MAIN/LAUNCHER), `SET_ALARM`.
 |---|---|
 | Rama | `feature/sol-os-visual-redesign` |
 | Branch slug | `feature-sol-os-visual-redesign` |
-| Último commit | `87515ad` — feat: apply Sol OS visual design system from HTML mockup |
-| Snapshot | `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-001_2026-06-04_10-06.md` |
+| Último commit antes del cierre | `e8a7b31` — docs: session handoff — feature/sol-os-visual-redesign session 001 |
+| Snapshot | `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-002_2026-06-04_14-37.md` |
 
 ---
 
@@ -242,6 +245,21 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - `SettingsScreen.kt`: Scaffold con dock, SolGreen para API key confirmada.
   - Probado en emulador `emulator-5554` (API 34). ✅
   - Snapshot: `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-001_2026-06-04_10-06.md`
+- **2026-06-04** — Cierre funcional del rediseño visual Sol OS en `feature/sol-os-visual-redesign`.
+  - Dock inferior reducido a 3 secciones: Home, Apps y Settings. La conversación queda como pantalla
+    interna al enviar mensajes desde Home, no como sección de la barra inferior.
+  - `MainActivity`: navegación real por rutas, `ChatViewModel` compartido entre Home/conversación,
+    `BackHandler` por ruta y `android:enableOnBackInvokedCallback="true"` para eliminar warning de logcat.
+  - `ChatScreen`: modo Home vs Conversation, composer sin micrófono placeholder, test tags estables.
+  - `DockNav`, Drawer y Settings navegan por destinos reales; textos nuevos localizados.
+  - Tipografía cambia a TTF locales empaquetadas (`Hanken Grotesk`, `Newsreader`, `Spline Sans Mono`);
+    removidos `ui-text-google-fonts` y `font_certs.xml`.
+  - Test instrumentado Compose añadido para navegación del dock y preservación de mensaje al entrar en conversación.
+  - Validaciones: `./gradlew test`, `./gradlew lint`, `./gradlew assembleDebug`,
+    `./gradlew assembleAndroidTest` ✅. `git diff --check` ✅.
+  - `connectedDebugAndroidTest` falla por entorno: `ddmlib` no lee propiedades de `emulator-5554`,
+    marca el AVD como `Unknown API Level` y no ejecuta tests.
+  - Snapshot: `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-002_2026-06-04_14-37.md`
 - **2026-06-04** — Objetivo de almacenamiento seguro de credenciales implementado localmente sin commit/push.
   - `TASK-RUNTIME-001` documentado como cerrado/revisado/mergeado en `main` (`3d447bd`).
   - API keys salen de `AppSettings`/DataStore como fuente primaria; `SettingsRepository` expone solo

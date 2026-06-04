@@ -2,36 +2,29 @@ package com.nuevoso.launcher.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.googlefonts.Font
-import androidx.compose.ui.text.googlefonts.GoogleFont
 import androidx.compose.ui.unit.sp
 import com.nuevoso.launcher.R
 
-private val provider = GoogleFont.Provider(
-    providerAuthority = "com.google.android.gms.fonts",
-    providerPackage = "com.google.android.gms",
-    certificates = R.array.com_google_android_gms_fonts_certs,
-)
-
 val HankenGrotesk: FontFamily = FontFamily(
-    Font(GoogleFont("Hanken Grotesk"), provider, weight = FontWeight.Normal),
-    Font(GoogleFont("Hanken Grotesk"), provider, weight = FontWeight.Medium),
-    Font(GoogleFont("Hanken Grotesk"), provider, weight = FontWeight.SemiBold),
-    Font(GoogleFont("Hanken Grotesk"), provider, weight = FontWeight.Bold),
+    Font(R.font.hanken_grotesk, weight = FontWeight.Normal),
+    Font(R.font.hanken_grotesk, weight = FontWeight.Medium),
+    Font(R.font.hanken_grotesk, weight = FontWeight.SemiBold),
+    Font(R.font.hanken_grotesk, weight = FontWeight.Bold),
 )
 
 val Newsreader: FontFamily = FontFamily(
-    Font(GoogleFont("Newsreader"), provider, weight = FontWeight.Normal),
-    Font(GoogleFont("Newsreader"), provider, weight = FontWeight.Normal, style = FontStyle.Italic),
-    Font(GoogleFont("Newsreader"), provider, weight = FontWeight.SemiBold),
+    Font(R.font.newsreader, weight = FontWeight.Normal),
+    Font(R.font.newsreader_italic, weight = FontWeight.Normal, style = FontStyle.Italic),
+    Font(R.font.newsreader, weight = FontWeight.SemiBold),
 )
 
 val SplineSansMono: FontFamily = FontFamily(
-    Font(GoogleFont("Spline Sans Mono"), provider, weight = FontWeight.Normal),
-    Font(GoogleFont("Spline Sans Mono"), provider, weight = FontWeight.Medium),
+    Font(R.font.spline_sans_mono, weight = FontWeight.Normal),
+    Font(R.font.spline_sans_mono, weight = FontWeight.Medium),
 )
 
 val Typography = Typography(
