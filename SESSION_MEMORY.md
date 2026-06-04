@@ -35,19 +35,16 @@ y **aprende del usuario** mediante una capa de memoria local.
 
 ## 2. Estado actual (al 2026-06-04)
 
-- ✅ **Compila en CI.** Último CI verde registrado: commit `6075541`, run `26862773391` (~17.65 MB).
-  Localmente Gradle compila en esta máquina con acceso a `~/.gradle`; no hay emulator/device activo
-  en `adb devices` durante esta sesión.
-- ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
+- ✅ **Compila localmente.** `./gradlew assembleDebug` BUILD SUCCESSFUL en `feature/sol-os-visual-redesign`.
+- ✅ **App ejecutada en emulador** `emulator-5554` (API 34). Pantalla home con orb, greeting, chips y dock visibles.
+- ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO**.
 - ✅ App completa v1 (chat home + cajón de apps + ajustes + agente) con Runtime v0 gobernado.
-- ✅ `TASK-RUNTIME-001` cerrado, revisado por humano y mergeado en `main` como `3d447bd`
-  (`feat: add governed consent lifecycle and basic actions`).
-- 🚧 Objetivo activo de seguridad: almacenamiento cifrado de API keys con Android
-  Keystore-backed storage y migración legacy desde DataStore.
-- ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
-  firmas). Es cosmético, no afecta código ni APK. Workaround: `git -c commit.gpgsign=false`.
-- 📥 **Descarga del APK:** Actions → run verde → sección *Artifacts* (al final) → `app-debug`
-  → descomprimir el zip. Requiere estar logueado en GitHub.
+- ✅ `TASK-RUNTIME-001` cerrado, revisado por humano y mergeado en `main` como `3d447bd`.
+- ✅ Almacenamiento cifrado de API keys implementado en commit `93d17e8` (en `main` local; verificar si está en `origin/main`).
+- 🚧 **Rama activa: `feature/sol-os-visual-redesign`** — sistema de diseño Sol OS aplicado a la app.
+  Pendiente: PR de merge a `main`.
+- ⚠️ **Commits salen `verified: false`** (firma del entorno rota). Cosmético. Workaround: `git -c commit.gpgsign=false`.
+- 📥 **Descarga del APK:** Actions → run verde → Artifacts → `app-debug` → descomprimir zip.
 
 ---
 
@@ -132,6 +129,17 @@ MAIN/LAUNCHER), `SET_ALARM`.
   usuario lo pida explícitamente.
 - Para ver por qué falló un build de CI (los logs crudos están bloqueados por host): el
   workflow ya emite `::error::` annotations legibles vía la API de check-runs annotations.
+
+---
+
+## 6b. Rama activa y snapshot
+
+| Campo | Valor |
+|---|---|
+| Rama | `feature/sol-os-visual-redesign` |
+| Branch slug | `feature-sol-os-visual-redesign` |
+| Último commit | `87515ad` — feat: apply Sol OS visual design system from HTML mockup |
+| Snapshot | `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-001_2026-06-04_10-06.md` |
 
 ---
 
@@ -222,6 +230,18 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
     prellenado desde día/fecha, hora inicio y hora término; sigue siendo R2 y requiere confirmación.
   - La auditoría de calendario redacciona título, ubicación y descripción como metadata de longitud.
   - Tests unitarios de sanitizer/policy/cálculo temporal pasan; app debug reinstalada en emulador.
+- **2026-06-04** — Almacenamiento seguro de API keys (`93d17e8`) commiteado en `main` local.
+- **2026-06-04** — Sistema de diseño Sol OS aplicado desde maqueta HTML en rama `feature/sol-os-visual-redesign`.
+  - `Color.kt`: paleta cálida completa (terracota, crema, dorado).
+  - `Theme.kt`: esquemas Sol OS, `dynamicColor=false`, status bar transparente.
+  - `Type.kt`: Hanken Grotesk / Newsreader / Spline Sans Mono vía `ui-text-google-fonts`.
+  - `SolOrb.kt`: orb Canvas animado (Idle/Thinking/Speaking/Listening).
+  - `DockNav.kt`: dock inferior con mini-orb en Home activo.
+  - `ChatScreen.kt`: hero idle con greeting+orb+chips, conversación con mini-orb, pill composer, burbujas serif.
+  - `AppDrawerScreen.kt`: fondo crema, búsqueda pill, dock.
+  - `SettingsScreen.kt`: Scaffold con dock, SolGreen para API key confirmada.
+  - Probado en emulador `emulator-5554` (API 34). ✅
+  - Snapshot: `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-001_2026-06-04_10-06.md`
 - **2026-06-04** — Objetivo de almacenamiento seguro de credenciales implementado localmente sin commit/push.
   - `TASK-RUNTIME-001` documentado como cerrado/revisado/mergeado en `main` (`3d447bd`).
   - API keys salen de `AppSettings`/DataStore como fuente primaria; `SettingsRepository` expone solo
