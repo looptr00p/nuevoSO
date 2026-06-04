@@ -11,10 +11,16 @@ Runtime v0 introduces a deterministic governance layer between model-generated t
 and concrete Android executors:
 
 ```text
-ToolCall -> ActionRequest -> PolicyEngine -> PolicyDecision -> ActionAuditEvent -> Executor
+ToolCall
+-> ActionRequest
+-> PolicyEngine
+-> durable pre-execution audit event
+-> Executor only if ALLOW and audit persistence succeeded
+-> append-only outcome audit event
 ```
 
-Executors are only called for `ALLOW` decisions.
+Executors are only called for `ALLOW` decisions after the mandatory pre-execution audit
+event is durably recorded. If that audit write fails, the action does not run.
 
 ## Threat Model
 
@@ -31,7 +37,7 @@ and local memory writes.
 
 - `R0_READ_ONLY`: local read-only operations that do not disclose sensitive data externally.
 - `R1_REVERSIBLE`: bounded reversible actions such as `open_app`, `press_back`,
-  `scroll_screen`, and flashlight toggles.
+  `scroll_screen`, and explicit `flashlight=on/off` operations.
 - `R2_SENSITIVE`: actions that persist data, expose user context, contact external
   services, or enter sensitive device flows.
 - `R3_DESTRUCTIVE_OR_EXTERNAL`: generic third-party interaction such as `tap_element`
@@ -44,8 +50,9 @@ execute yet because the consent lifecycle is deferred to `TASK-RUNTIME-001`. `R4
 ## Local-First Privacy Boundary
 
 Room memory, chat history, settings, and action audit events are local-first. Android
-backup is disabled for the current laboratory runtime, and backup rules also exclude
-database, shared preference, and file domains as a defense-in-depth default.
+backup is disabled for the current laboratory runtime. Backup rules also explicitly
+exclude root, file, database, shared preference, external, and device-protected storage
+domains for cloud backup and device transfer where the Android backup XML supports them.
 
 Persistence is local-first. Remote inference may still receive selected context until an
 on-device model is available. In particular, the configured remote model can receive the
@@ -55,10 +62,27 @@ screen reads from executing silently.
 
 ## Audit Trail
 
-The audit table records action ID, timestamp, tool name, risk level, policy decision,
-sanitized argument summary, execution result category, and optional failure reason. It does
-not store raw typed text, remembered facts, phone targets, URLs, API keys, raw prompts, or
-full screen contents.
+The Room database is version 3. The audit table is append-only and keyed by `eventId`,
+with `actionId` indexed so multiple lifecycle events can describe one action. Events
+record timestamp, tool name, risk level, policy decision, lifecycle stage, sanitized
+summary, execution result category, and a controlled `SafeFailureCode`.
+
+Lifecycle stages include pre-execution and terminal states such as `EXECUTION_STARTED`,
+`CONFIRMATION_REQUIRED`, `DENIED`, `EXECUTION_SUCCEEDED`, `EXECUTION_FAILED`, and
+`LEGACY_RECORDED` for migrated v2 audit rows. Room supports the explicit migration path
+`v1 -> v2 -> v3`; v2 audit rows are represented as legacy lifecycle events and legacy
+summaries are redacted during migration to avoid preserving historical raw payload leaks.
+
+The sanitizer is allowlist-based by tool. Unknown argument values are redacted by default.
+Search queries, alarm labels, call targets, remembered facts, tap descriptions, and typed
+text persist only length metadata. Unknown tools persist tool name, normalized argument
+key names, and value lengths, never raw values. Raw exception messages are not persisted
+or returned to the model; controlled failure codes are used instead.
+
+If final audit persistence fails after an executor has already run, the dispatcher does
+not retry the executor. It returns a safe uncertainty result stating that the action may
+have completed but audit finalization failed. This is a residual limitation for Android
+side effects that cannot always be rolled back after execution.
 
 ## Accessibility Fallback
 
@@ -73,8 +97,9 @@ and blocks them until explicit confirmation exists.
 - Gemini API keys are still stored in DataStore; encrypted credential storage remains a
   required follow-up.
 - Remote inference is still enabled when the user configures a cloud provider.
-- Room migration is explicit for v1 to v2, but a full instrumented migration test remains
-  a future hardening step.
+- Real migration verification exists as an instrumented `MigrationTestHelper` test and
+  compiles with `assembleAndroidTest`; connected execution still requires an available
+  emulator or device.
 - The accessibility service remains available for future governed flows.
 
 ## Explicitly Deferred Work

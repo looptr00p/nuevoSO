@@ -11,12 +11,25 @@ class ConfigurationHardeningTest {
         val manifest = readRepoFile("app/src/main/AndroidManifest.xml")
         val backupRules = readRepoFile("app/src/main/res/xml/backup_rules.xml")
         val extractionRules = readRepoFile("app/src/main/res/xml/data_extraction_rules.xml")
+        val requiredDomains = listOf(
+            "root",
+            "file",
+            "database",
+            "sharedpref",
+            "external",
+            "device_root",
+            "device_file",
+            "device_database",
+            "device_sharedpref",
+        )
 
         assertTrue(manifest.contains("android:allowBackup=\"false\""))
-        assertTrue(backupRules.contains("domain=\"database\""))
-        assertTrue(backupRules.contains("domain=\"file\""))
-        assertTrue(extractionRules.contains("domain=\"database\""))
-        assertTrue(extractionRules.contains("domain=\"file\""))
+        requiredDomains.forEach { domain ->
+            assertTrue("backup_rules.xml missing $domain", backupRules.contains("domain=\"$domain\""))
+            assertTrue("data_extraction_rules.xml missing $domain", extractionRules.contains("domain=\"$domain\""))
+        }
+        assertTrue(extractionRules.contains("<cloud-backup"))
+        assertTrue(extractionRules.contains("<device-transfer>"))
     }
 
     @Test

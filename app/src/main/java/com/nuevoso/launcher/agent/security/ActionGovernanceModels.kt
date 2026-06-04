@@ -1,5 +1,7 @@
 package com.nuevoso.launcher.agent.security
 
+import java.util.UUID
+
 enum class ActionRiskLevel {
     R0_READ_ONLY,
     R1_REVERSIBLE,
@@ -15,9 +17,34 @@ enum class PolicyDecisionType {
 }
 
 enum class ExecutionResultCategory {
+    NOT_EXECUTED,
     EXECUTED,
     BLOCKED_BY_POLICY,
     FAILED,
+    PARTIAL_AUDIT_FAILURE,
+}
+
+enum class ActionLifecycleStage {
+    REQUESTED,
+    POLICY_ALLOWED,
+    CONFIRMATION_REQUIRED,
+    DENIED,
+    EXECUTION_STARTED,
+    EXECUTION_SUCCEEDED,
+    EXECUTION_FAILED,
+    AUDIT_FINALIZATION_FAILED,
+    LEGACY_RECORDED,
+}
+
+enum class SafeFailureCode {
+    NONE,
+    AUDIT_PERSISTENCE_FAILED,
+    EXECUTOR_UNAVAILABLE,
+    PERMISSION_DENIED,
+    VALIDATION_FAILED,
+    NETWORK_ERROR,
+    DATABASE_ERROR,
+    UNKNOWN_FAILURE,
 }
 
 data class ActionPolicy(
@@ -46,12 +73,14 @@ sealed class PolicyDecision(
 }
 
 data class ActionAuditEvent(
+    val eventId: String = UUID.randomUUID().toString(),
     val actionId: String,
     val timestampMillis: Long,
     val toolName: String,
     val riskLevel: ActionRiskLevel,
     val policyDecision: PolicyDecisionType,
+    val lifecycleStage: ActionLifecycleStage,
     val sanitizedSummary: String,
     val executionResultCategory: ExecutionResultCategory,
-    val failureReason: String? = null,
+    val safeFailureCode: SafeFailureCode = SafeFailureCode.NONE,
 )

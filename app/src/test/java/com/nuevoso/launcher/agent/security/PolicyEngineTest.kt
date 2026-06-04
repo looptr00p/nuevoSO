@@ -35,6 +35,21 @@ class PolicyEngineTest {
     }
 
     @Test
+    fun flashlightRequiresExplicitDeclarativeValue() {
+        val missing = evaluate(ToolCall(id = "1", name = "toggle_setting", args = mapOf("setting" to "flashlight")))
+        val malformed = evaluate(
+            ToolCall(id = "1", name = "toggle_setting", args = mapOf("setting" to "flashlight", "value" to "toggle"))
+        )
+        val explicit = evaluate(
+            ToolCall(id = "1", name = "toggle_setting", args = mapOf("setting" to "flashlight", "value" to "off"))
+        )
+
+        assertEquals(PolicyDecisionType.DENY, missing.type)
+        assertEquals(PolicyDecisionType.DENY, malformed.type)
+        assertEquals(PolicyDecisionType.ALLOW, explicit.type)
+    }
+
+    @Test
     fun genericAccessibilityTapsRequireConfirmation() {
         val decision = evaluate(ToolCall(id = "1", name = "tap_element", args = mapOf("description" to "Buy now")))
 

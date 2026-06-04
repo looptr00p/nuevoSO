@@ -40,14 +40,14 @@ val ALL_TOOLS = listOf(
     ),
     ToolSpec(
         name = "toggle_setting",
-        description = "Abre el panel de ajustes del teléfono para cambiar una configuración (Wi-Fi, Bluetooth, brillo, etc.) o activa/desactiva la linterna directamente.",
+        description = "Abre el panel de ajustes del teléfono para cambiar una configuración (Wi-Fi, Bluetooth, brillo, etc.) o controla la linterna con un valor explícito.",
         parameters = mapOf(
             "setting" to ParamSpec(
                 type = "string",
                 description = "Ajuste a cambiar",
                 enum = listOf("wifi", "bluetooth", "data", "brightness", "sound", "airplane", "flashlight"),
             ),
-            "value" to ParamSpec("string", "on o off (solo para linterna)"),
+            "value" to ParamSpec("string", "Obligatorio para flashlight: on para encender u off para apagar", enum = listOf("on", "off")),
         ),
         required = listOf("setting"),
     ),

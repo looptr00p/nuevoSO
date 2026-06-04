@@ -16,12 +16,15 @@ Model proposal
 -> ActionRequest
 -> PolicyEngine
 -> PolicyDecision
--> Audit event
--> Executor only when explicitly allowed
+-> durable pre-execution audit event
+-> Executor only when explicitly allowed and audit persistence succeeded
+-> append-only outcome audit event
 ```
 
 Unknown tools fail closed. Sensitive actions return a safe blocked result until a future
-confirmation UI is implemented.
+confirmation UI is implemented. Action audit storage is Room v3 and append-only: each
+action can have multiple lifecycle events keyed by `eventId`, with `actionId` indexed for
+review.
 
 See [docs/SOL_OS_RUNTIME_V0_SECURITY_BASELINE.md](docs/SOL_OS_RUNTIME_V0_SECURITY_BASELINE.md)
 for the threat model, policy levels, audit behavior, backup decision, and deferred work.

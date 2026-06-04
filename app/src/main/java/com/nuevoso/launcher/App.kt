@@ -28,7 +28,7 @@ class App : Application() {
         settingsRepository = SettingsRepository(this)
 
         val db = Room.databaseBuilder(this, MemoryDb::class.java, "memory.db")
-            .addMigrations(MemoryMigrations.MIGRATION_1_2)
+            .addMigrations(MemoryMigrations.MIGRATION_1_2, MemoryMigrations.MIGRATION_2_3)
             .build()
         memoryRepository = MemoryRepository(db.memoryDao())
 

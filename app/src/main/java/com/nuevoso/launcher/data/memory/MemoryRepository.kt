@@ -44,14 +44,16 @@ class MemoryRepository(private val dao: MemoryDao) {
     suspend fun recordActionAudit(event: ActionAuditEvent) {
         dao.insertActionAuditEvent(
             ActionAuditEntity(
+                eventId = event.eventId,
                 actionId = event.actionId,
                 timestampMillis = event.timestampMillis,
                 toolName = event.toolName,
                 riskLevel = event.riskLevel.name,
                 policyDecision = event.policyDecision.name,
+                lifecycleStage = event.lifecycleStage.name,
                 sanitizedSummary = event.sanitizedSummary,
                 executionResultCategory = event.executionResultCategory.name,
-                failureReason = event.failureReason,
+                safeFailureCode = event.safeFailureCode.name,
             )
         )
     }

@@ -8,8 +8,6 @@ import android.provider.Settings
 
 class ToggleSettingExecutor(private val context: Context) {
 
-    private var torchOn = false
-
     fun execute(setting: String, value: String?): String {
         return when (setting.lowercase()) {
             "flashlight" -> toggleFlashlight(value)
@@ -33,13 +31,14 @@ class ToggleSettingExecutor(private val context: Context) {
             val turnOn = when (value?.lowercase()) {
                 "on" -> true
                 "off" -> false
-                else -> !torchOn
+                else -> return "La linterna requiere un valor explícito: on u off."
             }
             cm.setTorchMode(cameraId, turnOn)
-            torchOn = turnOn
             if (turnOn) "Linterna encendida." else "Linterna apagada."
+        } catch (e: SecurityException) {
+            "No pude controlar la linterna por permisos insuficientes."
         } catch (e: Exception) {
-            "No pude controlar la linterna: ${e.message}"
+            "No pude controlar la linterna por un fallo local controlado."
         }
     }
 

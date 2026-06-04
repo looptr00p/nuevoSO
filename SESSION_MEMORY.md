@@ -33,16 +33,19 @@ y **aprende del usuario** mediante una capa de memoria local.
 
 ---
 
-## 2. Estado actual (al 2026-06-03)
+## 2. Estado actual (al 2026-06-04)
 
-- ✅ **Compila en CI.** Último CI verde: commit `6075541`, run `26862773391` (~17.65 MB).
-  Local: emulador `Pixel_3a_API_34` (Android 14 arm64) operativo en Mac. Build local en ~10 s con `./gradlew installDebug`.
+- ✅ **Compila en CI.** Último CI verde registrado: commit `6075541`, run `26862773391` (~17.65 MB).
+  Localmente Gradle compila en esta máquina con acceso a `~/.gradle`; no hay emulator/device activo
+  en `adb devices` durante esta sesión.
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
 - ✅ 33 archivos Kotlin, app completa v1 (chat home + cajón de apps + ajustes + agente).
-- 🚧 Rama local actual de seguridad: `feat/sol-runtime-v0-security-foundation`.
-  - Implementado sin commit: `TASK-RUNTIME-000` introduce gobierno determinista de acciones,
-    auditoría Room v2, migración no destructiva, backup desactivado, prompt seguro y docs.
-  - Verificación local: `./gradlew test` ✅, `./gradlew assembleDebug` ✅.
+- 🚧 Rama local actual de seguridad: `fix/task-runtime-000a-security-hardening`.
+  - Commit base `61c7543` ya contiene `TASK-RUNTIME-000`.
+  - En progreso sin commit/push: `TASK-RUNTIME-000A` endurece auditoría append-only Room v3,
+    migración `v1 -> v2 -> v3`, sanitizer allowlist, códigos de fallo seguros, exclusiones
+    de backup y linterna declarativa `on/off`.
+  - Verificación local de esta sesión: `./gradlew test` ✅, `./gradlew assembleAndroidTest` ✅.
   - `./gradlew lint` sigue fallando con 5 errores preexistentes de baseline: `MainActivity.onBackPressed`
     y traducciones EN faltantes de strings de accessibility.
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
@@ -113,8 +116,10 @@ MAIN/LAUNCHER), `SET_ALARM`.
 - `QUERY_ALL_PACKAGES` + `<queries>` obligatorio en Android 11+ o el cajón sale vacío.
 - API key solo on-device (DataStore), **NUNCA** en el repo.
 - Wi-Fi/Bluetooth no se pueden conmutar por código en Android moderno: `toggle_setting`
-  hace deep-link al panel. Solo la linterna (`CameraManager.setTorchMode`) es programable.
-- No se puede compilar el APK en este contenedor: verificar SIEMPRE vía CI verde.
+  hace deep-link al panel. Solo la linterna (`CameraManager.setTorchMode`) es programable
+  y ahora exige valor declarativo explícito `on` u `off`; no hay toggle por estado local.
+- Si Gradle falla por permisos sobre `~/.gradle`, reintentar con permisos aprobados. Para releases,
+  seguir verificando también vía CI verde.
 
 ---
 
@@ -185,3 +190,14 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - Docs: README ampliado y `docs/SOL_OS_RUNTIME_V0_SECURITY_BASELINE.md`.
   - Tests nuevos para política, sanitizer, dispatcher, migración y config. `test` y `assembleDebug`
     pasan; `lint` conserva el fallo baseline preexistente.
+- **2026-06-04** — `TASK-RUNTIME-000A` implementado en rama `fix/task-runtime-000a-security-hardening` sin commit/push.
+  - Auditoría Room v3 append-only: `eventId` como PK, `actionId` indexado, lifecycle stages,
+    `SafeFailureCode`, y migración `MIGRATION_2_3` desde filas v2 legacy.
+  - `ActionDispatcher`: auditoría durable antes del executor; si falla, no ejecuta. La
+    finalización fallida posterior a side effects no reintenta executor y devuelve incertidumbre segura.
+  - Sanitizer fail-closed por allowlist de herramienta; unknown args/tools persisten solo claves y longitudes.
+  - `toggle_setting(setting="flashlight", value="on|off")` reemplaza el toggle ambiguo en memoria.
+  - Backup XML excluye root/file/database/sharedpref/external y dominios device_* en cloud/transfer.
+  - Tests: dispatcher durability, sanitizer unknown args, flashlight declarativo, SQL guardrails y
+    `MemoryMigrationInstrumentedTest` con `MigrationTestHelper`. `connectedDebugAndroidTest` queda pendiente
+    si no hay emulator/device en `adb devices`.
