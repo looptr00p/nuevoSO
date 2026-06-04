@@ -60,7 +60,7 @@ object MemoryMigrations {
                     "`riskLevel`, " +
                     "`policyDecision`, " +
                     "'LEGACY_RECORDED', " +
-                    "'[LEGACY_SUMMARY_REDACTED length=' || length(`sanitizedSummary`) || ']', " +
+                    "'[LEGACY_SUMMARY_REDACTED]', " +
                     "`executionResultCategory`, " +
                     "CASE WHEN `failureReason` IS NULL OR `failureReason` = '' " +
                     "THEN 'NONE' ELSE 'UNKNOWN_FAILURE' END " +
