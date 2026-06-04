@@ -12,6 +12,8 @@
     <string name="set_as_home_desc">Esto reemplazará tu pantalla de inicio actual</string>
     <string name="thinking">Pensando…</string>
     <string name="error_no_key">Configura tu API Key en Ajustes primero</string>
+    <string name="provider_missing_config_message">Configura tu API Key en Ajustes para activar el asistente.</string>
+    <string name="provider_safe_failure_message">No pude completar la respuesta. Revisa la conexión, la clave configurada o el proveedor e inténtalo de nuevo.</string>
     <string name="open_settings">Ir a Ajustes</string>
     <string name="search_apps">Buscar apps…</string>
     <string name="remember_facts_label">Perfil / Memoria</string>

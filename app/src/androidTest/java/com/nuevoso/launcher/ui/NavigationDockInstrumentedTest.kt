@@ -5,11 +5,14 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import com.nuevoso.launcher.App
 import com.nuevoso.launcher.MainActivity
+import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
 
@@ -35,6 +38,13 @@ class NavigationDockInstrumentedTest {
     @Test
     fun conversationKeepsMessageSubmittedFromHome() {
         val syntheticMessage = "mensaje sintetico de navegacion"
+        val missingProviderMessage = "Configure your API Key in Settings to activate the assistant."
+
+        runBlocking {
+            val app = App.get(composeRule.activity)
+            app.settingsRepository.clearApiKey()
+            app.memoryRepository.clearHistory()
+        }
 
         composeRule.onNodeWithTag("screen_home").assertIsDisplayed()
         composeRule.onNodeWithTag("composer_input").performTextInput(syntheticMessage)
@@ -45,6 +55,13 @@ class NavigationDockInstrumentedTest {
         }
         composeRule.onNodeWithTag("screen_conversation").assertIsDisplayed()
         composeRule.onNodeWithText(syntheticMessage).assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithTag("message_assistant").fetchSemanticsNodes().isNotEmpty()
+        }
+        composeRule.onNodeWithTag("message_assistant").assertIsDisplayed()
+        composeRule.waitUntil(timeoutMillis = 5_000) {
+            composeRule.onAllNodesWithText(missingProviderMessage).fetchSemanticsNodes().isNotEmpty()
+        }
         composeRule.onAllNodesWithContentDescription("Voz").assertCountEquals(0)
     }
 }

@@ -141,8 +141,8 @@ MAIN/LAUNCHER), `SET_ALARM`.
 |---|---|
 | Rama | `feature/sol-os-visual-redesign` |
 | Branch slug | `feature-sol-os-visual-redesign` |
-| Último commit antes del cierre | `e8a7b31` — docs: session handoff — feature/sol-os-visual-redesign session 001 |
-| Snapshot | `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-002_2026-06-04_14-37.md` |
+| Último commit antes del cierre | Pendiente de commit — `TASK-V1-READINESS-001` |
+| Snapshot | `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-003_2026-06-04_16-38.md` |
 
 ---
 
@@ -271,3 +271,17 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - Settings UI trata la API key como write-only: permite guardar/limpiar, no precarga la clave guardada.
   - Unit tests pasan; `assembleAndroidTest` compila. `connectedDebugAndroidTest` falló por
     `No compatible devices connected` tras timeout de propiedades en `emulator-5554`.
+- **2026-06-04** — `TASK-V1-READINESS-001` ejecutado en `feature/sol-os-visual-redesign`.
+  - Chat: los fallos de configuración/proveedor ahora aparecen como burbuja persistente del asistente,
+    además de snackbar, con mensajes localizados y seguros que no exponen claves, URLs, payloads ni
+    excepciones crudas.
+  - `ChatScreen`: corregido autoscroll al último mensaje real y añadidos tags estables para burbujas
+    `message_user` / `message_assistant`.
+  - `NavigationDockInstrumentedTest`: limpia API key/historial y verifica Home -> conversación con
+    feedback visible cuando falta API key.
+  - Validaciones finales: `./gradlew test`, `./gradlew lint`, `./gradlew assembleDebug`,
+    `./gradlew assembleAndroidTest`, `./gradlew connectedDebugAndroidTest` ✅; `git diff --check` ✅.
+  - Snapshot: `docs/session-handoffs/feature-sol-os-visual-redesign/nuevoso_feature-sol-os-visual-redesign_session-003_2026-06-04_16-38.md`
+  - Próxima sesión: seguir con los imprescindibles para v1 real: alinear ramas/fuente de verdad,
+    validar API key real, probar launcher por defecto, probar acciones reales del agente y cerrar UX
+    de errores antes de revisión humana/merge.

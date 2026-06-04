@@ -121,9 +121,9 @@ fun ChatScreen(
     }
 
     LaunchedEffect(state.messages.size, state.streamingText, state.isThinking) {
-        val lastIndex = state.messages.size
-        if (lastIndex > 0 || state.streamingText != null || state.isThinking) {
-            listState.animateScrollToItem(lastIndex)
+        val lastMessageIndex = state.messages.lastIndex
+        if (lastMessageIndex >= 0 || state.streamingText != null || state.isThinking) {
+            listState.animateScrollToItem((lastMessageIndex + activeTransientItemCount(state)).coerceAtLeast(0))
         }
     }
 
@@ -211,6 +211,14 @@ fun ChatScreen(
                 .align(Alignment.BottomCenter)
                 .padding(bottom = 160.dp),
         )
+    }
+}
+
+private fun activeTransientItemCount(state: ChatUiState): Int {
+    return when {
+        state.streamingText != null -> 1
+        state.isThinking            -> 1
+        else                        -> 0
     }
 }
 
@@ -532,7 +540,8 @@ private fun MessageBubble(msg: ChatMessage) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 4.dp),
+            .padding(horizontal = 4.dp)
+            .testTag(if (isUser) "message_user" else "message_assistant"),
         horizontalArrangement = if (isUser) Arrangement.End else Arrangement.Start,
     ) {
         Box(

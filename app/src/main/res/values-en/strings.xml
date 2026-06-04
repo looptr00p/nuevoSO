@@ -12,6 +12,8 @@
     <string name="set_as_home_desc">This will replace your current home screen</string>
     <string name="thinking">Thinking…</string>
     <string name="error_no_key">Configure your API Key in Settings first</string>
+    <string name="provider_missing_config_message">Configure your API Key in Settings to activate the assistant.</string>
+    <string name="provider_safe_failure_message">I could not complete the response. Check the connection, configured key, or provider and try again.</string>
     <string name="open_settings">Go to Settings</string>
     <string name="search_apps">Search apps…</string>
     <string name="remember_facts_label">Profile / Memory</string>

@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nuevoso.launcher.App
+import com.nuevoso.launcher.R
 import com.nuevoso.launcher.agent.ActionDispatcher
 import com.nuevoso.launcher.agent.AgentContinuation
 import com.nuevoso.launcher.agent.AgentLoop
@@ -57,12 +58,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
             val (provider, _) = app.providerFactory.build()
             if (provider == null) {
-                _state.update {
-                    it.copy(
-                        isThinking = false,
-                        error = "Configura tu API Key en Ajustes primero.",
-                    )
-                }
+                appendAssistantFailure(app.getString(R.string.provider_missing_config_message))
                 return@launch
             }
 
@@ -94,14 +90,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
                 handleLoopResult(result, loop, dispatcher)
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isThinking = false,
-                        streamingText = null,
-                        pendingConfirmation = null,
-                        error = "Error seguro: la acción no se completó.",
-                    )
-                }
+                appendAssistantFailure(app.getString(R.string.provider_safe_failure_message))
             }
         }
     }
@@ -131,14 +120,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 handleLoopResult(result, session.loop, session.dispatcher)
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isThinking = false,
-                        streamingText = null,
-                        pendingConfirmation = null,
-                        error = "Error seguro: la acción no se completó.",
-                    )
-                }
+                appendAssistantFailure(app.getString(R.string.provider_safe_failure_message))
             }
         }
     }
@@ -161,14 +143,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
                 )
                 handleLoopResult(result, session.loop, session.dispatcher)
             } catch (e: Exception) {
-                _state.update {
-                    it.copy(
-                        isThinking = false,
-                        streamingText = null,
-                        pendingConfirmation = null,
-                        error = "Error seguro: la acción no se completó.",
-                    )
-                }
+                appendAssistantFailure(app.getString(R.string.provider_safe_failure_message))
             }
         }
     }
@@ -233,6 +208,20 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun dismissError() = _state.update { it.copy(error = null) }
+
+    private suspend fun appendAssistantFailure(message: String) {
+        val assistantMsg = ChatMessage(role = "assistant", text = message)
+        app.memoryRepository.saveMessage("model", assistantMsg.text)
+        _state.update {
+            it.copy(
+                messages = it.messages + assistantMsg,
+                isThinking = false,
+                streamingText = null,
+                pendingConfirmation = null,
+                error = message,
+            )
+        }
+    }
 
     private data class PendingConfirmationSession(
         val prompt: ApprovalPrompt,
