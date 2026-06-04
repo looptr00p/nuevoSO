@@ -39,15 +39,13 @@ y **aprende del usuario** mediante una capa de memoria local.
   Localmente Gradle compila en esta máquina con acceso a `~/.gradle`; no hay emulator/device activo
   en `adb devices` durante esta sesión.
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
-- ✅ 33 archivos Kotlin, app completa v1 (chat home + cajón de apps + ajustes + agente).
-- 🚧 Rama local actual de seguridad: `fix/task-runtime-000a-security-hardening`.
-  - Commit base `61c7543` ya contiene `TASK-RUNTIME-000`.
-  - En progreso sin commit/push: `TASK-RUNTIME-000A` endurece auditoría append-only Room v3,
-    migración `v1 -> v2 -> v3`, sanitizer allowlist, códigos de fallo seguros, exclusiones
-    de backup y linterna declarativa `on/off`.
-  - Verificación local de esta sesión: `./gradlew test` ✅, `./gradlew assembleAndroidTest` ✅.
-  - `./gradlew lint` sigue fallando con 5 errores preexistentes de baseline: `MainActivity.onBackPressed`
-    y traducciones EN faltantes de strings de accessibility.
+- ✅ App completa v1 (chat home + cajón de apps + ajustes + agente) con Runtime v0 gobernado.
+- 🚧 Rama local actual de seguridad: `task/runtime-001-consent-lifecycle`.
+  - Commit base `4e4ffd6` en `main` ya contiene `TASK-RUNTIME-000A` mergeado/cerrado.
+  - En progreso sin commit/push: `TASK-RUNTIME-001` implementa lifecycle de consentimiento,
+    tokens de aprobación in-memory, expiración, replay protection y confirmation UI sanitizada.
+  - Verificación local parcial de esta sesión: `./gradlew test` ✅. Validaciones restantes se
+    registran en el handoff de la tarea.
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
   firmas). Es cosmético, no afecta código ni APK. Workaround: `git -c commit.gpgsign=false`.
 - 📥 **Descarga del APK:** Actions → run verde → sección *Artifacts* (al final) → `app-debug`
@@ -87,11 +85,13 @@ ai/
   Prompts.kt           # fun buildSystemPrompt(memoryContext): String  (top-level, NO en object)
   gemini/GeminiProvider.kt, GeminiApi.kt, GeminiDtos.kt
 agent/
-  AgentLoop.kt         # bucle máx 6 rondas: send -> tool_use -> dispatch -> tool_result -> repeat
+  AgentLoop.kt         # bucle máx 15 rondas; pausa localmente si una tool requiere confirmación
   Tools.kt             # ALL_TOOLS: open_app, search_web, set_alarm, call, toggle_setting, remember_fact
-  ActionDispatcher.kt  # tool_call -> executor
+  ActionDispatcher.kt  # ToolCall -> ActionRequest -> PolicyEngine -> audit/consent/executor
+  security/            # PolicyEngine, sanitizer, audit models, approval token store
   executors/{OpenApp,SearchWeb,Dial,SetAlarm,ToggleSetting}Executor.kt
 ui/
+  chat/                # ConfirmationPanel muestra solo tool/risk/sanitizedSummary
   theme/{Theme,Color,Type}.kt
   chat/{ChatScreen,ChatViewModel,ChatUiState}.kt   # SUPERFICIE HOME
   drawer/{AppDrawerScreen,AppDrawerViewModel}.kt
@@ -201,3 +201,24 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - Tests: dispatcher durability, sanitizer unknown args, flashlight declarativo, SQL guardrails y
     `MemoryMigrationInstrumentedTest` con `MigrationTestHelper`. `connectedDebugAndroidTest` queda pendiente
     si no hay emulator/device en `adb devices`.
+- **2026-06-04** — `TASK-RUNTIME-001` implementado en rama `task/runtime-001-consent-lifecycle` sin commit/push.
+  - Consent lifecycle local: `ActionDispatcher.dispatchForAgent` emite `PendingConfirmation`
+    para R2/R3; `dispatch()` sigue siendo model-facing y no expone tokens.
+  - Tokens in-memory UUID v4 con `actionId`, hash SHA-256 determinista de argumentos sanitizados,
+    `riskLevel`, `issuedAtMillis`, `expiresAtMillis` (120s), single-use, expiry y replay protection.
+  - `AgentLoop` pausa y guarda continuación local; `ChatViewModel` reanuda solo tras Aprobar,
+    Rechazar o timeout. El token nunca entra al transcript del modelo.
+  - UI Compose de confirmación muestra solo tool, riesgo y resumen sanitizado.
+  - Auditoría append-only añade `CONFIRMATION_GRANTED`, `CONFIRMATION_REJECTED`,
+    `CONFIRMATION_EXPIRED`; aprobaciones válidas aún pasan por pre-execution audit antes del executor.
+  - Tests nuevos: dispatcher approval/reject/expiry/replay/pre-audit, store binding/hash/unknown token,
+    y agent loop token-boundary. `./gradlew test` ✅.
+- **2026-06-04** — Cierre operativo de la rama `task/runtime-001-consent-lifecycle`.
+  - Alarmas relativas: `set_alarm` acepta `delay_minutes` para casos como "en 3 minutos"; el prompt
+    instruye al modelo a no pedir hora exacta cuando el retraso relativo está claro.
+  - Permiso de alarmas corregido a `com.android.alarm.permission.SET_ALARM`; el intent de Clock dejó
+    de fallar por `Permission Denial`.
+  - Calendario: añadida tool gobernada `create_calendar_event` para abrir Google Calendar con evento
+    prellenado desde día/fecha, hora inicio y hora término; sigue siendo R2 y requiere confirmación.
+  - La auditoría de calendario redacciona título, ubicación y descripción como metadata de longitud.
+  - Tests unitarios de sanitizer/policy/cálculo temporal pasan; app debug reinstalada en emulador.

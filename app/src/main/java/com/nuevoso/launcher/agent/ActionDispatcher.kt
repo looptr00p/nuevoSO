@@ -5,12 +5,19 @@ import com.nuevoso.launcher.agent.security.ActionAuditEvent
 import com.nuevoso.launcher.agent.security.ActionLifecycleStage
 import com.nuevoso.launcher.agent.security.ActionRequest
 import com.nuevoso.launcher.agent.security.ActionRequestFactory
+import com.nuevoso.launcher.agent.security.ApprovalConsumeResult
+import com.nuevoso.launcher.agent.security.ApprovalPrompt
+import com.nuevoso.launcher.agent.security.ApprovalStore
+import com.nuevoso.launcher.agent.security.ApprovalUserDecision
 import com.nuevoso.launcher.agent.security.ArgumentSanitizer
 import com.nuevoso.launcher.agent.security.ExecutionResultCategory
+import com.nuevoso.launcher.agent.security.InMemoryApprovalStore
 import com.nuevoso.launcher.agent.security.PolicyDecision
 import com.nuevoso.launcher.agent.security.PolicyEngine
+import com.nuevoso.launcher.agent.security.PendingActionApproval
 import com.nuevoso.launcher.agent.security.SafeFailureCode
 import com.nuevoso.launcher.agent.executors.AccessibilityExecutor
+import com.nuevoso.launcher.agent.executors.CalendarEventExecutor
 import com.nuevoso.launcher.agent.executors.InstallAppExecutor
 import com.nuevoso.launcher.agent.executors.DialExecutor
 import com.nuevoso.launcher.agent.executors.OpenAppExecutor
@@ -33,6 +40,7 @@ fun interface ActionAuditRecorder {
 class ActionDispatcher(
     private val executor: ToolCallExecutor,
     private val auditRecorder: ActionAuditRecorder,
+    private val approvalStore: ApprovalStore = InMemoryApprovalStore(),
     private val requestFactory: ActionRequestFactory = ActionRequestFactory(),
     private val policyEngine: PolicyEngine = PolicyEngine(),
 ) {
@@ -42,12 +50,22 @@ class ActionDispatcher(
         context: Context,
         appRepository: AppRepository,
         memoryRepository: MemoryRepository,
+        approvalStore: ApprovalStore = InMemoryApprovalStore(),
     ) : this(
         executor = DefaultToolCallExecutor(context, appRepository, memoryRepository),
         auditRecorder = ActionAuditRecorder { event -> memoryRepository.recordActionAudit(event) },
+        approvalStore = approvalStore,
     )
 
     suspend fun dispatch(call: ToolCall): ToolResult {
+        return when (val result = dispatchForAgent(call)) {
+            is ActionDispatchResult.Completed -> result.toolResult
+            is ActionDispatchResult.PendingConfirmation ->
+                ToolResult(id = call.id, result = blockedResult(result.pending.request, result.pending.decision))
+        }
+    }
+
+    suspend fun dispatchForAgent(call: ToolCall): ActionDispatchResult {
         val request = requestFactory.from(call)
         val decision = policyEngine.evaluate(request)
 
@@ -62,9 +80,11 @@ class ActionDispatcher(
                         )
                     )
                 ) {
-                    return ToolResult(id = call.id, result = auditPersistenceFailureResult())
+                    return ActionDispatchResult.Completed(
+                        ToolResult(id = call.id, result = auditPersistenceFailureResult())
+                    )
                 }
-                executeAfterPreAudit(call, request, decision)
+                ActionDispatchResult.Completed(executeAfterPreAudit(call, request, decision))
             }
             is PolicyDecision.RequireConfirmation -> {
                 if (!recordMandatoryAudit(
@@ -76,9 +96,17 @@ class ActionDispatcher(
                         )
                     )
                 ) {
-                    return ToolResult(id = call.id, result = auditPersistenceFailureResult())
+                    return ActionDispatchResult.Completed(
+                        ToolResult(id = call.id, result = auditPersistenceFailureResult())
+                    )
                 }
-                ToolResult(id = call.id, result = blockedResult(request, decision))
+                ActionDispatchResult.PendingConfirmation(
+                    approvalStore.issue(
+                        call = call,
+                        request = request,
+                        decision = decision,
+                    )
+                )
             }
             is PolicyDecision.Deny -> {
                 if (!recordMandatoryAudit(
@@ -90,10 +118,98 @@ class ActionDispatcher(
                         )
                     )
                 ) {
-                    return ToolResult(id = call.id, result = auditPersistenceFailureResult())
+                    return ActionDispatchResult.Completed(
+                        ToolResult(id = call.id, result = auditPersistenceFailureResult())
+                    )
                 }
-                ToolResult(id = call.id, result = blockedResult(request, decision))
+                ActionDispatchResult.Completed(ToolResult(id = call.id, result = blockedResult(request, decision)))
             }
+        }
+    }
+
+    suspend fun resolveApproval(prompt: ApprovalPrompt, approved: Boolean): ToolResult {
+        val consumeResult = approvalStore.consume(
+            token = prompt.token,
+            decision = if (approved) ApprovalUserDecision.APPROVE else ApprovalUserDecision.REJECT,
+            expectedActionId = prompt.actionId,
+            expectedArgumentsHash = prompt.argumentsHash,
+        )
+        return handleApprovalConsumeResult(consumeResult, fallbackToolResultId = prompt.actionId)
+    }
+
+    suspend fun expireApproval(prompt: ApprovalPrompt): ToolResult {
+        val consumeResult = approvalStore.expire(
+            token = prompt.token,
+            expectedActionId = prompt.actionId,
+            expectedArgumentsHash = prompt.argumentsHash,
+            nowMillis = prompt.expiresAtMillis + 1,
+        )
+        return handleApprovalConsumeResult(consumeResult, fallbackToolResultId = prompt.actionId)
+    }
+
+    private suspend fun handleApprovalConsumeResult(
+        consumeResult: ApprovalConsumeResult,
+        fallbackToolResultId: String,
+    ): ToolResult {
+        return when (consumeResult) {
+            is ApprovalConsumeResult.Approved -> {
+                val pending = consumeResult.pending
+                if (!recordMandatoryAudit(
+                        auditEvent(
+                            request = pending.request,
+                            decision = pending.decision,
+                            lifecycleStage = ActionLifecycleStage.CONFIRMATION_GRANTED,
+                            category = ExecutionResultCategory.NOT_EXECUTED,
+                        )
+                    )
+                ) {
+                    return ToolResult(id = pending.call.id, result = auditPersistenceFailureResult())
+                }
+                if (!recordMandatoryAudit(
+                        auditEvent(
+                            request = pending.request,
+                            decision = pending.decision,
+                            lifecycleStage = ActionLifecycleStage.EXECUTION_STARTED,
+                            category = ExecutionResultCategory.NOT_EXECUTED,
+                        )
+                    )
+                ) {
+                    return ToolResult(id = pending.call.id, result = auditPersistenceFailureResult())
+                }
+                executeAfterPreAudit(pending.call, pending.request, pending.decision)
+            }
+            is ApprovalConsumeResult.Rejected -> {
+                val pending = consumeResult.pending
+                if (!recordMandatoryAudit(
+                        auditEvent(
+                            request = pending.request,
+                            decision = pending.decision,
+                            lifecycleStage = ActionLifecycleStage.CONFIRMATION_REJECTED,
+                            category = ExecutionResultCategory.BLOCKED_BY_POLICY,
+                        )
+                    )
+                ) {
+                    return ToolResult(id = pending.call.id, result = auditPersistenceFailureResult())
+                }
+                ToolResult(id = pending.call.id, result = "Action rejected by the user.")
+            }
+            is ApprovalConsumeResult.Expired -> {
+                val pending = consumeResult.pending
+                if (!recordMandatoryAudit(
+                        auditEvent(
+                            request = pending.request,
+                            decision = pending.decision,
+                            lifecycleStage = ActionLifecycleStage.CONFIRMATION_EXPIRED,
+                            category = ExecutionResultCategory.BLOCKED_BY_POLICY,
+                        )
+                    )
+                ) {
+                    return ToolResult(id = pending.call.id, result = auditPersistenceFailureResult())
+                }
+                ToolResult(id = pending.call.id, result = "Action confirmation expired before approval.")
+            }
+            is ApprovalConsumeResult.Failed ->
+                ToolResult(id = fallbackToolResultId, result = "Action was not executed because confirmation was invalid.")
         }
     }
 
@@ -167,7 +283,6 @@ class ActionDispatcher(
     }
 
     private fun blockedResult(request: ActionRequest, decision: PolicyDecision): String {
-        // TODO(TASK-RUNTIME-001): Replace this safe refusal with a consent lifecycle and confirmation UI.
         return listOf(
             "Action blocked by policy.",
             "decision=${decision.type.name}",
@@ -212,6 +327,11 @@ class ActionDispatcher(
     )
 }
 
+sealed class ActionDispatchResult {
+    data class Completed(val toolResult: ToolResult) : ActionDispatchResult()
+    data class PendingConfirmation(val pending: PendingActionApproval) : ActionDispatchResult()
+}
+
 private class DefaultToolCallExecutor(
     context: Context,
     private val appRepository: AppRepository,
@@ -219,6 +339,7 @@ private class DefaultToolCallExecutor(
 ) : ToolCallExecutor {
     private val accessibility = AccessibilityExecutor()
     private val installApp = InstallAppExecutor(context)
+    private val calendarEvent = CalendarEventExecutor(context)
     private val openApp = OpenAppExecutor(context, appRepository)
     private val searchWeb = SearchWebExecutor(context)
     private val setAlarm = SetAlarmExecutor(context)
@@ -230,10 +351,12 @@ private class DefaultToolCallExecutor(
             "open_app" -> openApp.execute(call.args["app_name"] ?: "")
             "search_web" -> searchWeb.execute(call.args["query"] ?: "")
             "set_alarm" -> setAlarm.execute(
-                hour = call.args["hour"] ?: "0",
-                minute = call.args["minute"] ?: "0",
+                hour = call.args["hour"],
+                minute = call.args["minute"],
+                delayMinutes = call.args["delay_minutes"],
                 label = call.args["label"],
             )
+            "create_calendar_event" -> calendarEvent.execute(call.args)
             "call" -> dial.execute(call.args["target"] ?: "")
             "toggle_setting" -> toggle.execute(
                 setting = call.args["setting"] ?: "",

@@ -21,4 +21,10 @@
     <string name="accessibility_enable">Activar asistente de pantalla</string>
     <string name="accessibility_enable_desc">Necesario para que la IA navegue apps y webs por ti</string>
     <string name="accessibility_enabled">Asistente de pantalla activo</string>
+    <string name="confirmation_title">Confirmación requerida</string>
+    <string name="confirmation_tool">Herramienta</string>
+    <string name="confirmation_risk">Riesgo</string>
+    <string name="confirmation_summary">Resumen sanitizado</string>
+    <string name="confirmation_approve">Aprobar</string>
+    <string name="confirmation_reject">Rechazar</string>
 </resources>

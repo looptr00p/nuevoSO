@@ -1,5 +1,6 @@
 package com.nuevoso.launcher
 
+import android.annotation.SuppressLint
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -27,6 +28,8 @@ class MainActivity : ComponentActivity() {
     }
 
     // Launchers must not finish on Back from the root screen
+    @Suppress("OVERRIDE_DEPRECATION")
+    @SuppressLint("MissingSuperCall")
     override fun onBackPressed() {
         // consume: stay on home
     }

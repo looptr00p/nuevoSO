@@ -59,6 +59,176 @@ class ActionDispatcherTest {
     }
 
     @Test
+    fun pendingApprovalIsIssuedOnlyForRequireConfirmationDecisions() = runBlocking {
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor { "executed" },
+            auditRecorder = ActionAuditRecorder { },
+        )
+
+        val allow = dispatcher.dispatchForAgent(
+            ToolCall(id = "open", name = "open_app", args = mapOf("app_name" to "Clock"))
+        )
+        val requireConfirmation = dispatcher.dispatchForAgent(
+            ToolCall(id = "search", name = "search_web", args = mapOf("query" to "synthetic query"))
+        )
+        val deny = dispatcher.dispatchForAgent(
+            ToolCall(id = "unknown", name = "do_anything", args = emptyMap())
+        )
+
+        assertTrue(allow is ActionDispatchResult.Completed)
+        assertTrue(requireConfirmation is ActionDispatchResult.PendingConfirmation)
+        assertTrue(deny is ActionDispatchResult.Completed)
+    }
+
+    @Test
+    fun modelFacingDispatchDoesNotExposeApprovalToken() = runBlocking {
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor { "executed" },
+            auditRecorder = ActionAuditRecorder { },
+        )
+
+        val result = dispatcher.dispatch(
+            ToolCall(id = "tap", name = "tap_element", args = mapOf("description" to "Submit synthetic form"))
+        )
+
+        assertTrue(result.result.contains("Action blocked by policy."))
+        assertFalse(result.result.contains("token"))
+        assertFalse(result.result.contains("approval"))
+    }
+
+    @Test
+    fun userRejectionPreventsExecutionAndAuditsRejection() = runBlocking {
+        var executed = false
+        val audits = mutableListOf<ActionAuditEvent>()
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor {
+                executed = true
+                "executed"
+            },
+            auditRecorder = ActionAuditRecorder { audits += it },
+        )
+
+        val pending = dispatcher.dispatchForAgent(
+            ToolCall(id = "tap", name = "tap_element", args = mapOf("description" to "Submit synthetic form"))
+        ) as ActionDispatchResult.PendingConfirmation
+        val result = dispatcher.resolveApproval(pending.pending.prompt, approved = false)
+
+        assertFalse(executed)
+        assertEquals("Action rejected by the user.", result.result)
+        assertEquals(
+            listOf(ActionLifecycleStage.CONFIRMATION_REQUIRED, ActionLifecycleStage.CONFIRMATION_REJECTED),
+            audits.map { it.lifecycleStage },
+        )
+    }
+
+    @Test
+    fun validApprovalExecutesOnceAndRecordsGrantedLifecycle() = runBlocking {
+        var executionCount = 0
+        val audits = mutableListOf<ActionAuditEvent>()
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor {
+                executionCount += 1
+                "searched"
+            },
+            auditRecorder = ActionAuditRecorder { audits += it },
+        )
+
+        val pending = dispatcher.dispatchForAgent(
+            ToolCall(id = "search", name = "search_web", args = mapOf("query" to "synthetic query"))
+        ) as ActionDispatchResult.PendingConfirmation
+        val result = dispatcher.resolveApproval(pending.pending.prompt, approved = true)
+
+        assertEquals(1, executionCount)
+        assertEquals("searched", result.result)
+        assertEquals(
+            listOf(
+                ActionLifecycleStage.CONFIRMATION_REQUIRED,
+                ActionLifecycleStage.CONFIRMATION_GRANTED,
+                ActionLifecycleStage.EXECUTION_STARTED,
+                ActionLifecycleStage.EXECUTION_SUCCEEDED,
+            ),
+            audits.map { it.lifecycleStage },
+        )
+        assertTrue(audits.all { it.policyDecision == PolicyDecisionType.REQUIRE_CONFIRMATION })
+        assertEquals(ExecutionResultCategory.EXECUTED, audits.last().executionResultCategory)
+    }
+
+    @Test
+    fun approvedTokenIsSingleUseAndCannotReplayExecution() = runBlocking {
+        var executionCount = 0
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor {
+                executionCount += 1
+                "searched"
+            },
+            auditRecorder = ActionAuditRecorder { },
+        )
+
+        val pending = dispatcher.dispatchForAgent(
+            ToolCall(id = "search", name = "search_web", args = mapOf("query" to "synthetic query"))
+        ) as ActionDispatchResult.PendingConfirmation
+        val first = dispatcher.resolveApproval(pending.pending.prompt, approved = true)
+        val replay = dispatcher.resolveApproval(pending.pending.prompt, approved = true)
+
+        assertEquals("searched", first.result)
+        assertEquals(1, executionCount)
+        assertEquals("Action was not executed because confirmation was invalid.", replay.result)
+    }
+
+    @Test
+    fun expiredTokenIsRejectedAndAudited() = runBlocking {
+        var executed = false
+        val audits = mutableListOf<ActionAuditEvent>()
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor {
+                executed = true
+                "searched"
+            },
+            auditRecorder = ActionAuditRecorder { audits += it },
+        )
+
+        val pending = dispatcher.dispatchForAgent(
+            ToolCall(id = "search", name = "search_web", args = mapOf("query" to "synthetic query"))
+        ) as ActionDispatchResult.PendingConfirmation
+        val result = dispatcher.expireApproval(pending.pending.prompt)
+
+        assertFalse(executed)
+        assertEquals("Action confirmation expired before approval.", result.result)
+        assertEquals(
+            listOf(ActionLifecycleStage.CONFIRMATION_REQUIRED, ActionLifecycleStage.CONFIRMATION_EXPIRED),
+            audits.map { it.lifecycleStage },
+        )
+    }
+
+    @Test
+    fun preExecutionAuditFailureStillPreventsExecutionAfterApproval() = runBlocking {
+        var executed = false
+        var auditCount = 0
+        val dispatcher = ActionDispatcher(
+            executor = ToolCallExecutor {
+                executed = true
+                "searched"
+            },
+            auditRecorder = ActionAuditRecorder {
+                auditCount += 1
+                if (auditCount == 3) error("private audit failure")
+            },
+        )
+
+        val pending = dispatcher.dispatchForAgent(
+            ToolCall(id = "search", name = "search_web", args = mapOf("query" to "synthetic query"))
+        ) as ActionDispatchResult.PendingConfirmation
+        val result = dispatcher.resolveApproval(pending.pending.prompt, approved = true)
+
+        assertFalse(executed)
+        assertEquals(3, auditCount)
+        assertEquals(
+            "Action was not executed because the local security audit could not be recorded.",
+            result.result,
+        )
+    }
+
+    @Test
     fun deniedActionsDoNotCallExecutorsAndAreAudited() = runBlocking {
         var executed = false
         val audits = mutableListOf<ActionAuditEvent>()

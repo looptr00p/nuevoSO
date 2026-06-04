@@ -1,5 +1,7 @@
 package com.nuevoso.launcher.ui.chat
 
+import com.nuevoso.launcher.agent.security.ApprovalPrompt
+
 data class ChatMessage(
     val id: Long = System.nanoTime(),
     val role: String,  // "user" | "assistant"
@@ -12,4 +14,5 @@ data class ChatUiState(
     val streamingText: String? = null,  // respuesta del asistente mientras llega por streaming
     val error: String? = null,
     val hasApiKey: Boolean = false,
+    val pendingConfirmation: ApprovalPrompt? = null,
 )

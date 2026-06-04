@@ -22,13 +22,30 @@ val ALL_TOOLS = listOf(
     ),
     ToolSpec(
         name = "set_alarm",
-        description = "Pone una alarma a la hora indicada.",
+        description = "Pone una alarma. Para alarmas relativas como 'en 3 minutos', usa delay_minutes. Para una hora exacta, usa hour y minute.",
         parameters = mapOf(
             "hour" to ParamSpec("string", "Hora en formato 24h, ej: 7"),
             "minute" to ParamSpec("string", "Minutos, ej: 30"),
+            "delay_minutes" to ParamSpec("string", "Minutos desde ahora para una alarma relativa, ej: 3"),
             "label" to ParamSpec("string", "Etiqueta opcional de la alarma"),
         ),
-        required = listOf("hour", "minute"),
+        required = emptyList(),
+    ),
+    ToolSpec(
+        name = "create_calendar_event",
+        description = "Crea un evento de calendario prellenado. Para 'mañana', usa day=tomorrow. Para fechas exactas, usa date en formato YYYY-MM-DD. Usa horas 24h.",
+        parameters = mapOf(
+            "title" to ParamSpec("string", "Título breve del evento, ej: Cine"),
+            "day" to ParamSpec("string", "Día relativo", enum = listOf("today", "tomorrow")),
+            "date" to ParamSpec("string", "Fecha exacta en formato YYYY-MM-DD"),
+            "start_hour" to ParamSpec("string", "Hora de inicio en formato 24h, ej: 18"),
+            "start_minute" to ParamSpec("string", "Minuto de inicio, ej: 0"),
+            "end_hour" to ParamSpec("string", "Hora de término en formato 24h, ej: 21"),
+            "end_minute" to ParamSpec("string", "Minuto de término, ej: 0"),
+            "location" to ParamSpec("string", "Ubicación opcional"),
+            "description" to ParamSpec("string", "Descripción opcional"),
+        ),
+        required = listOf("title", "start_hour", "start_minute", "end_hour", "end_minute"),
     ),
     ToolSpec(
         name = "call",

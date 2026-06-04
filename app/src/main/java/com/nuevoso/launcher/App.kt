@@ -4,6 +4,8 @@ import android.app.Application
 import android.content.Context
 import androidx.room.Room
 import com.nuevoso.launcher.ai.ProviderFactory
+import com.nuevoso.launcher.agent.security.ApprovalStore
+import com.nuevoso.launcher.agent.security.InMemoryApprovalStore
 import com.nuevoso.launcher.data.apps.AppRepository
 import com.nuevoso.launcher.data.memory.MemoryDb
 import com.nuevoso.launcher.data.memory.MemoryMigrations
@@ -20,6 +22,8 @@ class App : Application() {
         private set
     lateinit var providerFactory: ProviderFactory
         private set
+    lateinit var approvalStore: ApprovalStore
+        private set
 
     override fun onCreate() {
         super.onCreate()
@@ -34,6 +38,7 @@ class App : Application() {
 
         appRepository = AppRepository(packageManager)
         providerFactory = ProviderFactory(settingsRepository)
+        approvalStore = InMemoryApprovalStore()
     }
 
     companion object {

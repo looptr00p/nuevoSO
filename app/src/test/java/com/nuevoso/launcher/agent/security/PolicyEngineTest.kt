@@ -35,6 +35,35 @@ class PolicyEngineTest {
     }
 
     @Test
+    fun relativeAlarmsRequireConfirmation() {
+        val decision = evaluate(ToolCall(id = "1", name = "set_alarm", args = mapOf("delay_minutes" to "3")))
+
+        assertEquals(PolicyDecisionType.REQUIRE_CONFIRMATION, decision.type)
+        assertTrue(decision.reason.isNotBlank())
+    }
+
+    @Test
+    fun calendarEventsRequireConfirmation() {
+        val decision = evaluate(
+            ToolCall(
+                id = "1",
+                name = "create_calendar_event",
+                args = mapOf(
+                    "title" to "Cine",
+                    "day" to "tomorrow",
+                    "start_hour" to "18",
+                    "start_minute" to "0",
+                    "end_hour" to "21",
+                    "end_minute" to "0",
+                ),
+            )
+        )
+
+        assertEquals(PolicyDecisionType.REQUIRE_CONFIRMATION, decision.type)
+        assertTrue(decision.reason.isNotBlank())
+    }
+
+    @Test
     fun flashlightRequiresExplicitDeclarativeValue() {
         val missing = evaluate(ToolCall(id = "1", name = "toggle_setting", args = mapOf("setting" to "flashlight")))
         val malformed = evaluate(
@@ -81,6 +110,14 @@ class PolicyEngineTest {
             "open_app" -> mapOf("app_name" to "Clock")
             "search_web" -> mapOf("query" to "weather")
             "set_alarm" -> mapOf("hour" to "7", "minute" to "30")
+            "create_calendar_event" -> mapOf(
+                "title" to "Cine",
+                "day" to "tomorrow",
+                "start_hour" to "18",
+                "start_minute" to "0",
+                "end_hour" to "21",
+                "end_minute" to "0",
+            )
             "call" -> mapOf("target" to "+100000000")
             "toggle_setting" -> mapOf("setting" to "flashlight", "value" to "on")
             "install_app" -> mapOf("app_name" to "Maps")

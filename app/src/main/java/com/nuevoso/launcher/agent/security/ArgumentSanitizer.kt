@@ -6,6 +6,7 @@ object ArgumentSanitizer {
     private val settings = setOf("wifi", "bluetooth", "data", "brightness", "sound", "airplane", "flashlight")
     private val binaryValues = setOf("on", "off")
     private val scrollDirections = setOf("down", "up")
+    private val relativeDays = setOf("today", "tomorrow")
 
     fun sanitize(toolName: String, args: Map<String, String>): Map<String, String> {
         if (args.isEmpty()) return emptyMap()
@@ -33,7 +34,18 @@ object ArgumentSanitizer {
                 "set_alarm" -> when (key) {
                     "hour" -> allowHour(value)
                     "minute" -> allowMinute(value)
+                    "delay_minutes" -> allowDelayMinutes(value)
                     "label" -> metadataOnly("LABEL_REDACTED", value)
+                    else -> redacted(value)
+                }
+                "create_calendar_event" -> when (key) {
+                    "title" -> requiredMetadataOnly("TITLE_REDACTED", value)
+                    "day" -> allowEnum(value, relativeDays)
+                    "date" -> allowDate(value)
+                    "start_hour", "end_hour" -> allowHour(value)
+                    "start_minute", "end_minute" -> allowMinute(value)
+                    "location" -> metadataOnly("LOCATION_REDACTED", value)
+                    "description" -> metadataOnly("DESCRIPTION_REDACTED", value)
                     else -> redacted(value)
                 }
                 "call" -> when (key) {
@@ -69,6 +81,10 @@ object ArgumentSanitizer {
 
     private fun metadataOnly(label: String, value: String): String = "[$label length=${value.length}]"
 
+    private fun requiredMetadataOnly(label: String, value: String): String {
+        return if (value.isBlank()) "[INVALID_EMPTY]" else metadataOnly(label, value)
+    }
+
     private fun allowString(value: String): String {
         return value.trim()
             .filterNot { it.isISOControl() }
@@ -89,5 +105,15 @@ object ArgumentSanitizer {
     private fun allowMinute(value: String): String {
         val minute = value.trim().toIntOrNull()
         return if (minute != null && minute in 0..59) minute.toString() else "[INVALID_MINUTE]"
+    }
+
+    private fun allowDelayMinutes(value: String): String {
+        val delay = value.trim().toIntOrNull()
+        return if (delay != null && delay in 1..1440) delay.toString() else "[INVALID_DELAY_MINUTES]"
+    }
+
+    private fun allowDate(value: String): String {
+        val normalized = value.trim()
+        return if (Regex("\\d{4}-\\d{2}-\\d{2}").matches(normalized)) normalized else "[INVALID_DATE]"
     }
 }

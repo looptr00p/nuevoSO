@@ -68,4 +68,40 @@ class ArgumentSanitizerTest {
         assertTrue(valid["value"] == "on")
         assertTrue(invalid.getValue("value").startsWith("[REDACTED"))
     }
+
+    @Test
+    fun sanitizerAllowsBoundedRelativeAlarmMinutes() {
+        val valid = ArgumentSanitizer.sanitize("set_alarm", mapOf("delay_minutes" to "3"))
+        val invalid = ArgumentSanitizer.sanitize("set_alarm", mapOf("delay_minutes" to "0"))
+
+        assertTrue(valid["delay_minutes"] == "3")
+        assertTrue(invalid["delay_minutes"] == "[INVALID_DELAY_MINUTES]")
+    }
+
+    @Test
+    fun sanitizerRedactsCalendarEventPrivateDetails() {
+        val sanitized = ArgumentSanitizer.sanitize(
+            "create_calendar_event",
+            mapOf(
+                "title" to "Cine con persona privada",
+                "day" to "tomorrow",
+                "start_hour" to "18",
+                "start_minute" to "0",
+                "end_hour" to "21",
+                "end_minute" to "0",
+                "location" to "Dirección privada",
+                "description" to "Detalle privado",
+            ),
+        )
+        val summary = ArgumentSanitizer.summarize(sanitized)
+
+        assertTrue(sanitized["day"] == "tomorrow")
+        assertTrue(sanitized["start_hour"] == "18")
+        assertTrue(summary.contains("TITLE_REDACTED"))
+        assertTrue(summary.contains("LOCATION_REDACTED"))
+        assertTrue(summary.contains("DESCRIPTION_REDACTED"))
+        assertFalse(summary.contains("persona privada"))
+        assertFalse(summary.contains("Dirección privada"))
+        assertFalse(summary.contains("Detalle privado"))
+    }
 }

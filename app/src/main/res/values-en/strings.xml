@@ -17,4 +17,14 @@
     <string name="remember_facts_label">Profile / Memory</string>
     <string name="clear_memory">Clear memory</string>
     <string name="facts_count">%d facts remembered</string>
+    <string name="accessibility_service_description">Allows nuevoSO to read the screen and interact with any app on your behalf.</string>
+    <string name="accessibility_enable">Enable screen assistant</string>
+    <string name="accessibility_enable_desc">Required for the AI to navigate apps and websites for you</string>
+    <string name="accessibility_enabled">Screen assistant active</string>
+    <string name="confirmation_title">Confirmation required</string>
+    <string name="confirmation_tool">Tool</string>
+    <string name="confirmation_risk">Risk</string>
+    <string name="confirmation_summary">Sanitized summary</string>
+    <string name="confirmation_approve">Approve</string>
+    <string name="confirmation_reject">Reject</string>
 </resources>

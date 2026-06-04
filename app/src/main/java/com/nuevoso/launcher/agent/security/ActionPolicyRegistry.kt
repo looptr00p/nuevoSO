@@ -12,6 +12,7 @@ object ActionPolicyRegistry {
             "toggle_setting" -> classifyToggleSetting(toolName, sanitizedArgs)
             "search_web" -> policy(toolName, ActionRiskLevel.R2_SENSITIVE, "Web search sends a query to an external service.")
             "set_alarm" -> policy(toolName, ActionRiskLevel.R2_SENSITIVE, "Setting alarms changes persistent user state.")
+            "create_calendar_event" -> policy(toolName, ActionRiskLevel.R2_SENSITIVE, "Creating calendar events changes persistent schedule state.")
             "call" -> policy(toolName, ActionRiskLevel.R2_SENSITIVE, "Calling opens a sensitive communication flow.")
             "remember_fact" -> policy(toolName, ActionRiskLevel.R2_SENSITIVE, "Remembering facts persists user data locally.")
             "install_app" -> policy(toolName, ActionRiskLevel.R2_SENSITIVE, "Installing apps changes device state and may involve Play Store.")
@@ -45,7 +46,18 @@ object ActionPolicyRegistry {
             "scroll_screen" -> setOf("direction")
             "toggle_setting" -> setOf("setting", "value")
             "search_web" -> setOf("query")
-            "set_alarm" -> setOf("hour", "minute", "label")
+            "set_alarm" -> setOf("hour", "minute", "delay_minutes", "label")
+            "create_calendar_event" -> setOf(
+                "title",
+                "day",
+                "date",
+                "start_hour",
+                "start_minute",
+                "end_hour",
+                "end_minute",
+                "location",
+                "description",
+            )
             "call" -> setOf("target")
             "remember_fact" -> setOf("fact")
             "tap_element" -> setOf("description")
@@ -57,7 +69,20 @@ object ActionPolicyRegistry {
         return when (toolName) {
             "open_app", "install_app" -> sanitizedArgs["app_name"].isNullOrBlank()
             "scroll_screen" -> sanitizedArgs["direction"] !in setOf("down", "up")
-            "set_alarm" -> sanitizedArgs["hour"].isNullOrBlank() || sanitizedArgs["minute"].isNullOrBlank()
+            "set_alarm" -> {
+                val hasAbsoluteTime = !sanitizedArgs["hour"].isNullOrBlank() && !sanitizedArgs["minute"].isNullOrBlank()
+                val hasRelativeTime = !sanitizedArgs["delay_minutes"].isNullOrBlank()
+                !hasAbsoluteTime && !hasRelativeTime
+            }
+            "create_calendar_event" -> {
+                val hasDate = !sanitizedArgs["day"].isNullOrBlank() || !sanitizedArgs["date"].isNullOrBlank()
+                sanitizedArgs["title"].isNullOrBlank() ||
+                    !hasDate ||
+                    sanitizedArgs["start_hour"].isNullOrBlank() ||
+                    sanitizedArgs["start_minute"].isNullOrBlank() ||
+                    sanitizedArgs["end_hour"].isNullOrBlank() ||
+                    sanitizedArgs["end_minute"].isNullOrBlank()
+            }
             "call" -> sanitizedArgs["target"].isNullOrBlank()
             "remember_fact" -> sanitizedArgs["fact"].isNullOrBlank()
             "tap_element" -> sanitizedArgs["description"].isNullOrBlank()

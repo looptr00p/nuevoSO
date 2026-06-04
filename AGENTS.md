@@ -14,12 +14,12 @@ The language model must never be the security authority.
 Complete:
 
 ```text
-TASK-RUNTIME-000A
-Harden audit durability, sanitizer defaults, backup exclusions,
-migration verification, and declarative flashlight control
+TASK-RUNTIME-001
+Implement consent lifecycle, approval token lifecycle,
+confirmation UI, expiry, and replay protection
 ```
 
-Do not begin `TASK-RUNTIME-001` until `TASK-RUNTIME-000A` has been reviewed and approved by a human.
+Do not begin the next runtime objective until `TASK-RUNTIME-001` has been reviewed and approved by a human.
 
 ## Security principles
 
@@ -150,14 +150,10 @@ If a command fails:
 - Stop after completing the bounded task.
 - Provide a handoff for human review before starting the next objective.
 
-## Scope boundaries for TASK-RUNTIME-000A
+## Scope boundaries for TASK-RUNTIME-001
 
 Do not implement:
 
-- consent UI
-- approval tokens
-- approval expiry
-- replay protection
 - Spotify integration
 - YouTube integration
 - media controls
@@ -184,11 +180,11 @@ At the end of the task, report:
 1. Baseline state before edits.
 2. Confirmed risks.
 3. Architecture changes made.
-4. Database migration design.
-5. Audit lifecycle design.
-6. Sanitization strategy.
-7. Backup exclusions applied.
-8. Flashlight behavior changes.
+4. Token and consent lifecycle design.
+5. Expiry and replay protection design.
+6. Confirmation UI design.
+7. Audit integration design.
+8. Database migration design.
 9. Files created.
 10. Files modified.
 11. Tests added.
@@ -197,13 +193,6 @@ At the end of the task, report:
 14. Remaining risks.
 15. Environment limitations.
 16. Deferred work.
-17. Recommended next task:
-
-```text
-TASK-RUNTIME-001
-Pending consent lifecycle, approval token lifecycle,
-confirmation UI, expiry, and replay protection
-```
-
+17. Recommended next task.
 18. `git diff --stat`.
 19. Confirmation that no commit and no push were performed.
