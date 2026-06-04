@@ -6,9 +6,9 @@ import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,19 +18,17 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -47,6 +45,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nuevoso.launcher.R
+import com.nuevoso.launcher.ui.chat.DockDestination
+import com.nuevoso.launcher.ui.chat.DockNav
+import com.nuevoso.launcher.ui.theme.SolBackground
+import com.nuevoso.launcher.ui.theme.SolGreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,172 +64,191 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {}
     } else null
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        androidx.compose.foundation.layout.Row(
-            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver")
-            }
-            Text(stringResource(R.string.settings), style = MaterialTheme.typography.headlineSmall)
-        }
-
-        // API Key
-        Text(stringResource(R.string.api_key_label), style = MaterialTheme.typography.labelLarge)
-        if (state.hasApiKey) {
-            Text(
-                "API Key guardada en almacenamiento cifrado.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-        if (state.credentialError) {
-            Text(
-                "No se pudo acceder al almacenamiento seguro de credenciales.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-            )
-        }
-        OutlinedTextField(
-            value = apiKeyInput,
-            onValueChange = { apiKeyInput = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.api_key_hint)) },
-            singleLine = true,
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-        )
-        Button(
-            onClick = {
-                vm.saveApiKey(apiKeyInput.trim())
-                apiKeyInput = ""
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text("Guardar API Key")
-        }
-        if (state.hasApiKey) {
-            OutlinedButton(
-                onClick = { vm.clearApiKey() },
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text("Limpiar API Key")
-            }
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        // Model
-        Text(stringResource(R.string.model_label), style = MaterialTheme.typography.labelLarge)
-        ExposedDropdownMenuBox(
-            expanded = modelExpanded,
-            onExpandedChange = { modelExpanded = it },
-        ) {
-            OutlinedTextField(
-                value = GEMINI_MODELS.find { it.first == state.modelId }?.second ?: state.modelId,
-                onValueChange = {},
-                readOnly = true,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
-            )
-            ExposedDropdownMenu(
-                expanded = modelExpanded,
-                onDismissRequest = { modelExpanded = false },
-            ) {
-                GEMINI_MODELS.forEach { (id, label) ->
-                    DropdownMenuItem(
-                        text = { Text(label) },
-                        onClick = {
-                            vm.saveModel(id)
-                            modelExpanded = false
-                        },
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        // Set as home
-        Text(stringResource(R.string.set_as_home), style = MaterialTheme.typography.labelLarge)
-        Text(
-            stringResource(R.string.set_as_home_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Button(
-            onClick = {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    val roleManager = context.getSystemService(RoleManager::class.java)
-                    if (roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
-                        roleRequestLauncher?.launch(
-                            roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
-                        )
+    Scaffold(
+        containerColor = SolBackground,
+        bottomBar = {
+            DockNav(
+                currentDestination = DockDestination.Settings,
+                onDestinationSelected = { dest ->
+                    when (dest) {
+                        DockDestination.Home,
+                        DockDestination.Apps,
+                        DockDestination.Conversation -> onBack()
+                        DockDestination.Settings     -> { /* already here */ }
                     }
-                } else {
-                    val intent = Intent(Settings.ACTION_HOME_SETTINGS)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.set_as_home))
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        // Memory
-        Text(stringResource(R.string.remember_facts_label), style = MaterialTheme.typography.labelLarge)
-        Text(
-            stringResource(R.string.facts_count, state.facts.size),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        OutlinedButton(
-            onClick = { showClearDialog = true },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.clear_memory))
-        }
-
-        Spacer(Modifier.height(4.dp))
-
-        // Accessibility service
-        val accessibilityEnabled = com.nuevoso.launcher.accessibility.NuevoSOAccessibilityService.isEnabled()
-        Text(stringResource(R.string.accessibility_enable), style = MaterialTheme.typography.labelLarge)
-        Text(
-            stringResource(R.string.accessibility_enable_desc),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        if (accessibilityEnabled) {
-            Text(
-                stringResource(R.string.accessibility_enabled),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary,
+                },
             )
-        } else {
+        },
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(SolBackground)
+                .statusBarsPadding()
+                .verticalScroll(rememberScrollState())
+                .padding(innerPadding)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.settings),
+                style = MaterialTheme.typography.headlineSmall,
+                modifier = Modifier.padding(top = 8.dp),
+            )
+
+            // API Key
+            Text(stringResource(R.string.api_key_label), style = MaterialTheme.typography.labelLarge)
+            if (state.hasApiKey) {
+                Text(
+                    "API Key guardada en almacenamiento cifrado.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = SolGreen,
+                )
+            }
+            if (state.credentialError) {
+                Text(
+                    "No se pudo acceder al almacenamiento seguro de credenciales.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                )
+            }
+            OutlinedTextField(
+                value = apiKeyInput,
+                onValueChange = { apiKeyInput = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text(stringResource(R.string.api_key_hint)) },
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
             Button(
                 onClick = {
-                    context.startActivity(
-                        android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
-                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
-                    )
+                    vm.saveApiKey(apiKeyInput.trim())
+                    apiKeyInput = ""
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text(stringResource(R.string.accessibility_enable))
+                Text("Guardar API Key")
             }
+            if (state.hasApiKey) {
+                OutlinedButton(
+                    onClick = { vm.clearApiKey() },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Limpiar API Key")
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Model
+            Text(stringResource(R.string.model_label), style = MaterialTheme.typography.labelLarge)
+            ExposedDropdownMenuBox(
+                expanded = modelExpanded,
+                onExpandedChange = { modelExpanded = it },
+            ) {
+                OutlinedTextField(
+                    value = GEMINI_MODELS.find { it.first == state.modelId }?.second ?: state.modelId,
+                    onValueChange = {},
+                    readOnly = true,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .menuAnchor(MenuAnchorType.PrimaryNotEditable),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = modelExpanded) },
+                )
+                ExposedDropdownMenu(
+                    expanded = modelExpanded,
+                    onDismissRequest = { modelExpanded = false },
+                ) {
+                    GEMINI_MODELS.forEach { (id, label) ->
+                        DropdownMenuItem(
+                            text = { Text(label) },
+                            onClick = {
+                                vm.saveModel(id)
+                                modelExpanded = false
+                            },
+                        )
+                    }
+                }
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Set as home
+            Text(stringResource(R.string.set_as_home), style = MaterialTheme.typography.labelLarge)
+            Text(
+                stringResource(R.string.set_as_home_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        val roleManager = context.getSystemService(RoleManager::class.java)
+                        if (roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
+                            roleRequestLauncher?.launch(
+                                roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME)
+                            )
+                        }
+                    } else {
+                        val intent = Intent(Settings.ACTION_HOME_SETTINGS)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.set_as_home))
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Memory
+            Text(stringResource(R.string.remember_facts_label), style = MaterialTheme.typography.labelLarge)
+            Text(
+                stringResource(R.string.facts_count, state.facts.size),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            OutlinedButton(
+                onClick = { showClearDialog = true },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(stringResource(R.string.clear_memory))
+            }
+
+            Spacer(Modifier.height(4.dp))
+
+            // Accessibility service
+            val accessibilityEnabled =
+                com.nuevoso.launcher.accessibility.NuevoSOAccessibilityService.isEnabled()
+            Text(stringResource(R.string.accessibility_enable), style = MaterialTheme.typography.labelLarge)
+            Text(
+                stringResource(R.string.accessibility_enable_desc),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            if (accessibilityEnabled) {
+                Text(
+                    stringResource(R.string.accessibility_enabled),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            } else {
+                Button(
+                    onClick = {
+                        context.startActivity(
+                            android.content.Intent(android.provider.Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.accessibility_enable))
+                }
+            }
+
+            Spacer(Modifier.height(16.dp))
         }
     }
 

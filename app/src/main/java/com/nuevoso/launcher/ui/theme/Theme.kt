@@ -1,5 +1,8 @@
 package com.nuevoso.launcher.ui.theme
 
+import android.app.Activity
+import android.content.ContextWrapper
+import android.content.Context
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
@@ -8,24 +11,63 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-
-private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80,
-)
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40,
+    primary = SolTerracotta,
+    onPrimary = Color.White,
+    primaryContainer = SolTerracottaLight,
+    onPrimaryContainer = Color.White,
+    secondary = SolGold,
+    onSecondary = SolTextDark,
+    secondaryContainer = SolSurface,
+    onSecondaryContainer = SolTextDark,
+    tertiary = SolCyan,
+    onTertiary = SolTextDark,
+    tertiaryContainer = SolSurface,
+    onTertiaryContainer = SolTextDark,
+    background = SolBackground,
+    onBackground = SolTextDark,
+    surface = SolSurface,
+    onSurface = SolTextDark,
+    surfaceVariant = SolSurfaceVariant,
+    onSurfaceVariant = SolTextSoft,
+    outline = SolTextFaint,
+    error = Color(0xFFB3261E),
+    onError = Color.White,
+)
+
+private val DarkColorScheme = darkColorScheme(
+    primary = SolTerracottaLight,
+    onPrimary = Color.White,
+    primaryContainer = SolTerracottaDark,
+    onPrimaryContainer = SolOnDarkText,
+    secondary = SolGold,
+    onSecondary = SolDarkBackground,
+    secondaryContainer = SolDarkSurface,
+    onSecondaryContainer = SolOnDarkText,
+    tertiary = SolCyan,
+    onTertiary = SolDarkBackground,
+    background = SolDarkBackground,
+    onBackground = SolOnDarkText,
+    surface = SolDarkSurface,
+    onSurface = SolOnDarkText,
+    surfaceVariant = SolDarkSurfaceVar,
+    onSurfaceVariant = SolOnDarkTextSoft,
+    outline = SolOnDarkTextSoft,
+    error = Color(0xFFF2B8B8),
+    onError = Color(0xFF601410),
 )
 
 @Composable
 fun NuevoSOTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
@@ -37,9 +79,30 @@ fun NuevoSOTheme(
         else -> LightColorScheme
     }
 
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val activity = view.context.findActivity()
+            if (activity != null) {
+                WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+                WindowInsetsControllerCompat(activity.window, view)
+                    .isAppearanceLightStatusBars = !darkTheme
+            }
+        }
+    }
+
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
         content = content,
     )
+}
+
+private fun Context.findActivity(): Activity? {
+    var ctx = this
+    while (ctx is ContextWrapper) {
+        if (ctx is Activity) return ctx
+        ctx = ctx.baseContext
+    }
+    return null
 }
