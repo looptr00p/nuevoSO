@@ -14,12 +14,13 @@ The language model must never be the security authority.
 Complete:
 
 ```text
-TASK-RUNTIME-001
-Implement consent lifecycle, approval token lifecycle,
-confirmation UI, expiry, and replay protection
+TASK-RUNTIME-002
+Implement Android Keystore-backed encrypted API key storage
 ```
 
-Do not begin the next runtime objective until `TASK-RUNTIME-001` has been reviewed and approved by a human.
+`TASK-RUNTIME-001` was reviewed by a human and merged in commit `3d447bd`.
+Do not begin the next runtime objective until the credential storage task has been
+reviewed and approved by a human.
 
 ## Security principles
 
@@ -152,6 +153,9 @@ If a command fails:
 
 ## Scope boundaries for TASK-RUNTIME-001
 
+`TASK-RUNTIME-001` is closed and merged. The active task is bounded to secure
+credential storage and legacy API key migration.
+
 Do not implement:
 
 - Spotify integration
@@ -160,7 +164,6 @@ Do not implement:
 - app removal
 - app archiving
 - usage analytics
-- Android Keystore credential migration
 - inference router
 - local model execution
 - Sol Algebraico UI

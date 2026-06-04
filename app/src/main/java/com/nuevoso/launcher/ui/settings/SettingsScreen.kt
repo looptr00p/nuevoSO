@@ -20,8 +20,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
@@ -46,7 +44,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nuevoso.launcher.R
@@ -57,8 +54,7 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
     val state by vm.state.collectAsState()
     val context = LocalContext.current
 
-    var apiKeyInput by remember(state.apiKey) { mutableStateOf(state.apiKey) }
-    var showKey by remember { mutableStateOf(false) }
+    var apiKeyInput by remember { mutableStateOf("") }
     var modelExpanded by remember { mutableStateOf(false) }
     var showClearDialog by remember { mutableStateOf(false) }
 
@@ -85,28 +81,45 @@ fun SettingsScreen(onBack: () -> Unit = {}, vm: SettingsViewModel = viewModel())
 
         // API Key
         Text(stringResource(R.string.api_key_label), style = MaterialTheme.typography.labelLarge)
+        if (state.hasApiKey) {
+            Text(
+                "API Key guardada en almacenamiento cifrado.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        if (state.credentialError) {
+            Text(
+                "No se pudo acceder al almacenamiento seguro de credenciales.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
         OutlinedTextField(
             value = apiKeyInput,
             onValueChange = { apiKeyInput = it },
             modifier = Modifier.fillMaxWidth(),
             placeholder = { Text(stringResource(R.string.api_key_hint)) },
             singleLine = true,
-            visualTransformation = if (showKey) VisualTransformation.None else PasswordVisualTransformation(),
+            visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            trailingIcon = {
-                IconButton(onClick = { showKey = !showKey }) {
-                    Icon(
-                        if (showKey) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                        contentDescription = null,
-                    )
-                }
-            },
         )
         Button(
-            onClick = { vm.saveApiKey(apiKeyInput.trim()) },
+            onClick = {
+                vm.saveApiKey(apiKeyInput.trim())
+                apiKeyInput = ""
+            },
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("Guardar API Key")
+        }
+        if (state.hasApiKey) {
+            OutlinedButton(
+                onClick = { vm.clearApiKey() },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Limpiar API Key")
+            }
         }
 
         Spacer(Modifier.height(4.dp))

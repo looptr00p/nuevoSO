@@ -11,8 +11,13 @@ import com.nuevoso.launcher.data.memory.MemoryDb
 import com.nuevoso.launcher.data.memory.MemoryMigrations
 import com.nuevoso.launcher.data.memory.MemoryRepository
 import com.nuevoso.launcher.data.settings.SettingsRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 
 class App : Application() {
+    private val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     lateinit var settingsRepository: SettingsRepository
         private set
@@ -39,6 +44,10 @@ class App : Application() {
         appRepository = AppRepository(packageManager)
         providerFactory = ProviderFactory(settingsRepository)
         approvalStore = InMemoryApprovalStore()
+
+        applicationScope.launch {
+            settingsRepository.migrateLegacyApiKeyIfPresent()
+        }
     }
 
     companion object {

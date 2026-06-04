@@ -31,7 +31,7 @@ class ChatViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         app.settingsRepository.settings
-            .onEach { settings -> _state.update { it.copy(hasApiKey = settings.apiKey.isNotBlank()) } }
+            .onEach { settings -> _state.update { it.copy(hasApiKey = settings.hasApiKey) } }
             .launchIn(viewModelScope)
     }
 

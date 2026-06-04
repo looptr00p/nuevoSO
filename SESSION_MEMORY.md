@@ -40,12 +40,10 @@ y **aprende del usuario** mediante una capa de memoria local.
   en `adb devices` durante esta sesión.
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
 - ✅ App completa v1 (chat home + cajón de apps + ajustes + agente) con Runtime v0 gobernado.
-- 🚧 Rama local actual de seguridad: `task/runtime-001-consent-lifecycle`.
-  - Commit base `4e4ffd6` en `main` ya contiene `TASK-RUNTIME-000A` mergeado/cerrado.
-  - En progreso sin commit/push: `TASK-RUNTIME-001` implementa lifecycle de consentimiento,
-    tokens de aprobación in-memory, expiración, replay protection y confirmation UI sanitizada.
-  - Verificación local parcial de esta sesión: `./gradlew test` ✅. Validaciones restantes se
-    registran en el handoff de la tarea.
+- ✅ `TASK-RUNTIME-001` cerrado, revisado por humano y mergeado en `main` como `3d447bd`
+  (`feat: add governed consent lifecycle and basic actions`).
+- 🚧 Objetivo activo de seguridad: almacenamiento cifrado de API keys con Android
+  Keystore-backed storage y migración legacy desde DataStore.
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
   firmas). Es cosmético, no afecta código ni APK. Workaround: `git -c commit.gpgsign=false`.
 - 📥 **Descarga del APK:** Actions → run verde → sección *Artifacts* (al final) → `app-debug`
@@ -114,7 +112,8 @@ MAIN/LAUNCHER), `SET_ALARM`.
 - `JsonPrimitive.content` es propiedad miembro — NO existe `import kotlinx.serialization.json.content`.
 - Lanzar apps desde el launcher requiere `FLAG_ACTIVITY_NEW_TASK`.
 - `QUERY_ALL_PACKAGES` + `<queries>` obligatorio en Android 11+ o el cajón sale vacío.
-- API key solo on-device (DataStore), **NUNCA** en el repo.
+- API key solo on-device, **NUNCA** en el repo. Las claves deben vivir en almacenamiento
+  cifrado respaldado por Android Keystore; DataStore solo conserva provider/model no sensibles.
 - Wi-Fi/Bluetooth no se pueden conmutar por código en Android moderno: `toggle_setting`
   hace deep-link al panel. Solo la linterna (`CameraManager.setTorchMode`) es programable
   y ahora exige valor declarativo explícito `on` u `off`; no hay toggle por estado local.
@@ -148,7 +147,8 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
 - [x] **`install_app`** — abre Play Store, navega y toca Instalar internamente; retry 429 con backoff en GeminiProvider.
 - [x] **Fixes**: botón ← en Settings y Drawer; crash cajón (`distinctBy packageName`); `GeminiSchema.type` sin default (fix 400).
 - [x] **Streaming SSE** de respuestas de Gemini — hecho (2026-06-03). `streamGenerateContent?alt=sse`.
-- [ ] **EncryptedSharedPreferences** para la API key (hoy DataStore en claro).
+- [x] **EncryptedSharedPreferences / AndroidX Security** para la API key con migración legacy
+  (implementado localmente; pendiente review humano/merge).
 - [ ] **Proveedor Claude** (`ClaudeProvider : AiProvider`) para validar la abstracción.
 - [ ] **Modo híbrido on-device** (Gemma/DeepSeek vía MediaPipe LLM Inference o MLC) — v2.
 - [ ] **Widgets/gestos** y generación de mini-apps a medida.
@@ -222,3 +222,14 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
     prellenado desde día/fecha, hora inicio y hora término; sigue siendo R2 y requiere confirmación.
   - La auditoría de calendario redacciona título, ubicación y descripción como metadata de longitud.
   - Tests unitarios de sanitizer/policy/cálculo temporal pasan; app debug reinstalada en emulador.
+- **2026-06-04** — Objetivo de almacenamiento seguro de credenciales implementado localmente sin commit/push.
+  - `TASK-RUNTIME-001` documentado como cerrado/revisado/mergeado en `main` (`3d447bd`).
+  - API keys salen de `AppSettings`/DataStore como fuente primaria; `SettingsRepository` expone solo
+    `hasApiKey` y migra una key legacy desde DataStore solo si la escritura cifrada tiene éxito.
+  - Añadido `CredentialRepository` con backend `AndroidKeystoreCredentialRepository`
+    (`EncryptedSharedPreferences` + `MasterKey`) y failure codes controlados.
+  - `ProviderFactory` lee la key desde la fuente segura y falla cerrado si falta la key, falla
+    secure storage, o el provider configurado no está implementado.
+  - Settings UI trata la API key como write-only: permite guardar/limpiar, no precarga la clave guardada.
+  - Unit tests pasan; `assembleAndroidTest` compila. `connectedDebugAndroidTest` falló por
+    `No compatible devices connected` tras timeout de propiedades en `emulator-5554`.

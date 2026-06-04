@@ -25,6 +25,10 @@ approves or rejects the sanitized action prompt. Approved actions still require 
 pre-execution audit event before execution. If any mandatory audit write fails, the action
 does not run.
 
+`TASK-RUNTIME-001` is closed, human-reviewed, and merged in commit `3d447bd`. The active
+follow-up objective is Android Keystore-backed encrypted storage for remote provider API
+keys.
+
 ## Threat Model
 
 The language model is not trusted as a security authority. It can misunderstand user
@@ -52,8 +56,9 @@ through the consent lifecycle introduced in `TASK-RUNTIME-001`. `R4` is denied.
 
 ## Local-First Privacy Boundary
 
-Room memory, chat history, settings, and action audit events are local-first. Android
-backup is disabled for the current laboratory runtime. Backup rules also explicitly
+Room memory, chat history, non-sensitive provider/model settings, encrypted credentials,
+and action audit events are local-first. Android backup is disabled for the current
+laboratory runtime. Backup rules also explicitly
 exclude root, file, database, shared preference, external, and device-protected storage
 domains for cloud backup and device transfer where the Android backup XML supports them.
 
@@ -63,6 +68,11 @@ system prompt, selected recent chat history, selected local memory context, tool
 declarations, and safe tool results. Approval tokens are local-only app state and are never
 sent to the model transcript. Runtime v0 blocks sensitive tool results such as screen reads
 from executing silently.
+
+Remote provider API keys are a local credential boundary. They must be held in Android
+Keystore-backed encrypted storage, not DataStore. DataStore may retain non-sensitive
+provider and model identifiers. If encrypted credential storage cannot be opened, remote
+provider initialization fails closed.
 
 ## Audit Trail
 
@@ -112,20 +122,37 @@ experimental fallback for unintegrated apps, not a general permission to control
 phone. Runtime v0 classifies generic taps and text input as `R3_DESTRUCTIVE_OR_EXTERNAL`
 and allows them only after explicit local confirmation.
 
+## Secure Credential Storage
+
+The active credential-storage task migrates legacy API keys from DataStore only when
+encrypted credential storage is available and the encrypted write succeeds. After a
+successful encrypted write, the legacy DataStore value is removed. If secure storage fails
+or encrypted write fails, the legacy value is not deleted and no remote provider is
+initialized from the legacy value.
+
+The app must never expose raw API keys in logs, audit records, prompts, UI state, tests,
+fixtures, or error messages. Credential errors are represented with controlled failure
+codes only. Existing credentials migrate locally on the device; they are not sent to any
+remote service for migration.
+
+The implementation uses AndroidX Security `security-crypto` with `EncryptedSharedPreferences`
+and `MasterKey` for the current laboratory runtime. The current AndroidX API compiles but
+emits deprecation warnings, so a future reviewed task should replace this backend if
+Jetpack publishes a non-deprecated successor suitable for minSdk 26.
+
 ## Known Limitations
 
-- Gemini API keys are still stored in DataStore; encrypted credential storage remains a
-  required follow-up.
 - Remote inference is still enabled when the user configures a cloud provider.
 - Approval requests are in-memory only; they intentionally do not survive process death.
 - Real migration verification exists as an instrumented `MigrationTestHelper` test and
   compiles with `assembleAndroidTest`; connected execution still requires an available
   emulator or device.
 - The accessibility service remains available for future governed flows.
+- If Android Keystore or encrypted preferences are unavailable, remote provider
+  initialization fails closed until the user/device state is repaired.
 
 ## Explicitly Deferred Work
 
-- Encrypted API key storage with Android Keystore-backed credentials.
 - Full provider router for cloud and on-device inference.
 - Spotify, YouTube, media playback, app removal, app archiving, usage statistics, AOSP,
   device-owner features, privileged package management, purchases, submissions, and
@@ -133,5 +160,5 @@ and allows them only after explicit local confirmation.
 
 ## Next Recommended Task
 
-Human review of `TASK-RUNTIME-001`, followed by encrypted API key storage with
-Android Keystore-backed credentials.
+Human review of the Android Keystore-backed credential storage task, followed by the next
+bounded runtime objective selected by the human reviewer.

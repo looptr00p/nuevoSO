@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.nuevoso.launcher.App
+import com.nuevoso.launcher.data.credentials.CredentialOperationResult
 import com.nuevoso.launcher.data.memory.UserFact
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -14,10 +15,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
-    val apiKey: String = "",
+    val hasApiKey: Boolean = false,
     val modelId: String = "gemini-2.5-flash",
     val providerId: String = "gemini",
     val facts: List<UserFact> = emptyList(),
+    val credentialError: Boolean = false,
 )
 
 val GEMINI_MODELS = listOf(
@@ -34,7 +36,11 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     init {
         app.settingsRepository.settings
-            .onEach { s -> _state.update { it.copy(apiKey = s.apiKey, modelId = s.modelId, providerId = s.providerId) } }
+            .onEach { s ->
+                _state.update {
+                    it.copy(hasApiKey = s.hasApiKey, modelId = s.modelId, providerId = s.providerId)
+                }
+            }
             .launchIn(viewModelScope)
 
         app.memoryRepository.facts
@@ -43,7 +49,13 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     }
 
     fun saveApiKey(key: String) = viewModelScope.launch {
-        app.settingsRepository.saveApiKey(key)
+        val result = app.settingsRepository.saveApiKey(key)
+        _state.update { it.copy(credentialError = result != CredentialOperationResult.Success) }
+    }
+
+    fun clearApiKey() = viewModelScope.launch {
+        val result = app.settingsRepository.clearApiKey()
+        _state.update { it.copy(credentialError = result != CredentialOperationResult.Success) }
     }
 
     fun saveModel(modelId: String) = viewModelScope.launch {
