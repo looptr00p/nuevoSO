@@ -28,4 +28,7 @@ interface MemoryDao {
 
     @Query("DELETE FROM chat_messages")
     suspend fun clearMessages()
+
+    @Insert
+    suspend fun insertActionAuditEvent(event: ActionAuditEntity)
 }

@@ -17,3 +17,15 @@ data class ChatMessageEntity(
     val text: String,
     val createdAt: Long = System.currentTimeMillis(),
 )
+
+@Entity(tableName = "action_audit_events")
+data class ActionAuditEntity(
+    @PrimaryKey val actionId: String,
+    val timestampMillis: Long,
+    val toolName: String,
+    val riskLevel: String,
+    val policyDecision: String,
+    val sanitizedSummary: String,
+    val executionResultCategory: String,
+    val failureReason: String?,
+)

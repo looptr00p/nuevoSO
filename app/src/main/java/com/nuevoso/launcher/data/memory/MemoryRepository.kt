@@ -1,5 +1,6 @@
 package com.nuevoso.launcher.data.memory
 
+import com.nuevoso.launcher.agent.security.ActionAuditEvent
 import kotlinx.coroutines.flow.Flow
 
 class MemoryRepository(private val dao: MemoryDao) {
@@ -38,5 +39,20 @@ class MemoryRepository(private val dao: MemoryDao) {
 
     suspend fun clearHistory() {
         dao.clearMessages()
+    }
+
+    suspend fun recordActionAudit(event: ActionAuditEvent) {
+        dao.insertActionAuditEvent(
+            ActionAuditEntity(
+                actionId = event.actionId,
+                timestampMillis = event.timestampMillis,
+                toolName = event.toolName,
+                riskLevel = event.riskLevel.name,
+                policyDecision = event.policyDecision.name,
+                sanitizedSummary = event.sanitizedSummary,
+                executionResultCategory = event.executionResultCategory.name,
+                failureReason = event.failureReason,
+            )
+        )
     }
 }

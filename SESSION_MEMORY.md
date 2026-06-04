@@ -39,6 +39,12 @@ y **aprende del usuario** mediante una capa de memoria local.
   Local: emulador `Pixel_3a_API_34` (Android 14 arm64) operativo en Mac. Build local en ~10 s con `./gradlew installDebug`.
 - ✅ Repo en GitHub: **https://github.com/looptr00p/nuevoSO** (rama `main`).
 - ✅ 33 archivos Kotlin, app completa v1 (chat home + cajón de apps + ajustes + agente).
+- 🚧 Rama local actual de seguridad: `feat/sol-runtime-v0-security-foundation`.
+  - Implementado sin commit: `TASK-RUNTIME-000` introduce gobierno determinista de acciones,
+    auditoría Room v2, migración no destructiva, backup desactivado, prompt seguro y docs.
+  - Verificación local: `./gradlew test` ✅, `./gradlew assembleDebug` ✅.
+  - `./gradlew lint` sigue fallando con 5 errores preexistentes de baseline: `MainActivity.onBackPressed`
+    y traducciones EN faltantes de strings de accessibility.
 - ⚠️ **Commits salen `verified: false`** (firma del entorno rota, error 400 del servidor de
   firmas). Es cosmético, no afecta código ni APK. Workaround: `git -c commit.gpgsign=false`.
 - 📥 **Descarga del APK:** Actions → run verde → sección *Artifacts* (al final) → `app-debug`
@@ -166,3 +172,16 @@ Pendientes y mejoras candidatas (confirmar prioridad con el usuario antes de imp
   - `list_apps`: lista apps instaladas vía `AppRepository`.
   - System prompt reescrito: flujo obligatorio de navegación web (search→read→tap hasta completar).
   - Fixes: botón ← en Settings/Drawer; crash cajón (`distinctBy`); `GeminiSchema.type`; `GeminiFunctionDeclaration.parameters` nullable.
+- **2026-06-03** — `TASK-RUNTIME-000` preparado en rama local `feat/sol-runtime-v0-security-foundation` sin commit/push.
+  - Añadido paquete `agent.security`: `ActionRequest`, `ActionPolicy`, `PolicyDecision`,
+    `ActionAuditEvent`, sanitizer, registry y `PolicyEngine`.
+  - `ActionDispatcher` ahora convierte `ToolCall -> ActionRequest -> PolicyDecision`, audita y
+    solo llama ejecutores cuando la decisión es `ALLOW`; `R2/R3` devuelven bloqueo seguro hasta
+    `TASK-RUNTIME-001`.
+  - Room sube a v2 con tabla `action_audit_events` y migración explícita `MIGRATION_1_2`; se quitó
+    `fallbackToDestructiveMigration()`.
+  - Backup cloud/device transfer desactivado/excluido; Gemini ya no instala `HttpLoggingInterceptor`.
+  - Prompt actualizado: el modelo propone acciones, no tiene control total ni puede saltarse política.
+  - Docs: README ampliado y `docs/SOL_OS_RUNTIME_V0_SECURITY_BASELINE.md`.
+  - Tests nuevos para política, sanitizer, dispatcher, migración y config. `test` y `assembleDebug`
+    pasan; `lint` conserva el fallo baseline preexistente.

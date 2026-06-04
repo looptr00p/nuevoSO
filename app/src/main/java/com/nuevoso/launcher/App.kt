@@ -6,6 +6,7 @@ import androidx.room.Room
 import com.nuevoso.launcher.ai.ProviderFactory
 import com.nuevoso.launcher.data.apps.AppRepository
 import com.nuevoso.launcher.data.memory.MemoryDb
+import com.nuevoso.launcher.data.memory.MemoryMigrations
 import com.nuevoso.launcher.data.memory.MemoryRepository
 import com.nuevoso.launcher.data.settings.SettingsRepository
 
@@ -27,7 +28,7 @@ class App : Application() {
         settingsRepository = SettingsRepository(this)
 
         val db = Room.databaseBuilder(this, MemoryDb::class.java, "memory.db")
-            .fallbackToDestructiveMigration()
+            .addMigrations(MemoryMigrations.MIGRATION_1_2)
             .build()
         memoryRepository = MemoryRepository(db.memoryDao())
 
